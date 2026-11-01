@@ -1,0 +1,232 @@
+/** بيانات الألعاب الإضافية */
+
+export const CHARACTERS = [
+  { id: "robin", name: "روبن", emoji: "🐰", accent: "#FF96B5", description: "مغامر لطيف يحب استكشاف كل حرف" },
+  { id: "koko", name: "كوكو", emoji: "🦊", accent: "#FFB062", description: "شجاع وذكي ويحب التحدي" },
+  { id: "mama", name: "ماما", emoji: "🐼", accent: "#9AC8FF", description: "هادئة وداعمة وتحب التعلم" },
+  { id: "nono", name: "نونو", emoji: "🐻", accent: "#A9D39E", description: "مرح ومبدع في كل نشاط" },
+  { id: "lulu", name: "لولو", emoji: "🐨", accent: "#C7B8FF", description: "تحب الأغاني وتكرار الحروف" },
+  { id: "simba", name: "سيمبا", emoji: "🦁", accent: "#FFD37A", description: "قائد صغير لا يستسلم أبدًا" },
+];
+
+export const getCharacterById = (id) => CHARACTERS.find((item) => item.id === id) || CHARACTERS[0];
+
+/** الأضداد */
+export const OPPOSITES = [
+  { word: "كبير", emoji: "🐘", opposite: "صغير", oppositeEmoji: "🐜" },
+  { word: "حار", emoji: "🔥", opposite: "بارد", oppositeEmoji: "🧊" },
+  { word: "فوق", emoji: "⬆️", opposite: "تحت", oppositeEmoji: "⬇️" },
+  { word: "ليل", emoji: "🌙", opposite: "نهار", oppositeEmoji: "🌞" },
+  { word: "سعيد", emoji: "😄", opposite: "حزين", oppositeEmoji: "😢" },
+  { word: "طويل", emoji: "🦒", opposite: "قصير", oppositeEmoji: "🐜" },
+  { word: "سريع", emoji: "🐆", opposite: "بطيء", oppositeEmoji: "🐢" },
+  { word: "نظيف", emoji: "🧼", opposite: "وسخ", oppositeEmoji: "🧦" },
+  { word: "مفتوح", emoji: "🚪", opposite: "مغلق", oppositeEmoji: "🔒" },
+  { word: "ثقيل", emoji: "🪨", opposite: "خفيف", oppositeEmoji: "🪶" },
+  { word: "قوي", emoji: "💪", opposite: "ضعيف", oppositeEmoji: "🥀" },
+  { word: "جديد", emoji: "✨", opposite: "قديم", oppositeEmoji: "🏺" },
+  { word: "حلو", emoji: "🍯", opposite: "مالح", oppositeEmoji: "🧂" },
+  { word: "أمام", emoji: "➡️", opposite: "خلف", oppositeEmoji: "⬅️" },
+  { word: "يمين", emoji: "👉", opposite: "يسار", oppositeEmoji: "👈" },
+  { word: "ناعم", emoji: "🧸", opposite: "خشن", oppositeEmoji: "🪵" },
+  { word: "مبلل", emoji: "💧", opposite: "جاف", oppositeEmoji: "🏜️" },
+  { word: "واقف", emoji: "🧍", opposite: "جالس", oppositeEmoji: "🪑" },
+  { word: "مضيء", emoji: "💡", opposite: "مظلم", oppositeEmoji: "🌑" },
+  { word: "واسع", emoji: "🏟️", opposite: "ضيق", oppositeEmoji: "🚪" },
+];
+
+/** العدّ */
+export const COUNTING_SETS = [
+  { emoji: "🍎", name: "تفاحات" },
+  { emoji: "⭐", name: "نجوم" },
+  { emoji: "🐟", name: "أسماك" },
+  { emoji: "🌸", name: "زهرات" },
+  { emoji: "🎈", name: "بالونات" },
+  { emoji: "🐝", name: "نحلات" },
+  { emoji: "🍌", name: "موزات" },
+  { emoji: "🦋", name: "فراشات" },
+  { emoji: "🚗", name: "سيارات" },
+  { emoji: "🍓", name: "فراولة" },
+];
+
+/** الأشكال الهندسية */
+export const SHAPES = [
+  { id: "circle", name: "دائرة", hint: "شكل مستدير بلا زوايا" },
+  { id: "square", name: "مربع", hint: "أربعة أضلاع متساوية" },
+  { id: "triangle", name: "مثلث", hint: "ثلاثة أضلاع" },
+  { id: "rectangle", name: "مستطيل", hint: "ضلعان طويلان وضلعان قصيران" },
+  { id: "star", name: "نجمة", hint: "خمسة رؤوس" },
+  { id: "heart", name: "قلب", hint: "شكل الحب" },
+  { id: "crescent", name: "هلال", hint: "قمر في أول الشهر" },
+  { id: "diamond", name: "معين", hint: "أربعة أضلاع مائلة" },
+  { id: "hexagon", name: "مسدس", hint: "ستة أضلاع" },
+  { id: "oval", name: "بيضاوي", hint: "دائرة ممدودة" },
+];
+
+/** الألوان */
+export const COLOR_LIST = [
+  { id: "red", name: "أحمر", hex: "#E8604C" },
+  { id: "blue", name: "أزرق", hex: "#2E7CC4" },
+  { id: "yellow", name: "أصفر", hex: "#F5C518" },
+  { id: "green", name: "أخضر", hex: "#2FA37B" },
+  { id: "orange", name: "برتقالي", hex: "#F08A24" },
+  { id: "purple", name: "بنفسجي", hex: "#8A5BD6" },
+  { id: "pink", name: "وردي", hex: "#E36BA8" },
+  { id: "brown", name: "بني", hex: "#9A6B3F" },
+  { id: "black", name: "أسود", hex: "#2E2A4F" },
+  { id: "white", name: "أبيض", hex: "#FFFFFF" },
+];
+
+/** كلمات لبناء الكلمة حرفًا حرفًا */
+export const BUILD_WORDS = [
+  { word: "قمر", emoji: "🌙" },
+  { word: "شمس", emoji: "☀️" },
+  { word: "كتاب", emoji: "📘" },
+  { word: "قلم", emoji: "✏️" },
+  { word: "وردة", emoji: "🌹" },
+  { word: "نجم", emoji: "⭐" },
+  { word: "بحر", emoji: "🌊" },
+  { word: "جبل", emoji: "⛰️" },
+  { word: "عسل", emoji: "🍯" },
+  { word: "خبز", emoji: "🍞" },
+  { word: "تمر", emoji: "🌴" },
+  { word: "بيت", emoji: "🏠" },
+  { word: "جمل", emoji: "🐪" },
+  { word: "نحل", emoji: "🐝" },
+  { word: "سمك", emoji: "🐟" },
+  { word: "بطة", emoji: "🦆" },
+  { word: "فيل", emoji: "🐘" },
+  { word: "يد", emoji: "✋" },
+];
+
+/** كلمات لتحديد موقع الحرف */
+export const POSITION_WORDS = [
+  { word: "مدرسة", emoji: "🏫", letter: "م", position: "first" },
+  { word: "مدرسة", emoji: "🏫", letter: "س", position: "middle" },
+  { word: "مدرسة", emoji: "🏫", letter: "ة", position: "last" },
+  { word: "قمر", emoji: "🌙", letter: "ق", position: "first" },
+  { word: "قمر", emoji: "🌙", letter: "م", position: "middle" },
+  { word: "قمر", emoji: "🌙", letter: "ر", position: "last" },
+  { word: "كتاب", emoji: "📘", letter: "ك", position: "first" },
+  { word: "كتاب", emoji: "📘", letter: "ت", position: "middle" },
+  { word: "كتاب", emoji: "📘", letter: "ب", position: "last" },
+  { word: "شمس", emoji: "☀️", letter: "ش", position: "first" },
+  { word: "شمس", emoji: "☀️", letter: "م", position: "middle" },
+  { word: "شمس", emoji: "☀️", letter: "س", position: "last" },
+  { word: "جبل", emoji: "⛰️", letter: "ج", position: "first" },
+  { word: "جبل", emoji: "⛰️", letter: "ب", position: "middle" },
+  { word: "جبل", emoji: "⛰️", letter: "ل", position: "last" },
+  { word: "عسل", emoji: "🍯", letter: "ع", position: "first" },
+  { word: "عسل", emoji: "🍯", letter: "س", position: "middle" },
+  { word: "عسل", emoji: "🍯", letter: "ل", position: "last" },
+  { word: "خبز", emoji: "🍞", letter: "خ", position: "first" },
+  { word: "خبز", emoji: "🍞", letter: "ب", position: "middle" },
+  { word: "خبز", emoji: "🍞", letter: "ز", position: "last" },
+  { word: "نجم", emoji: "⭐", letter: "ن", position: "first" },
+  { word: "نجم", emoji: "⭐", letter: "ج", position: "middle" },
+  { word: "نجم", emoji: "⭐", letter: "م", position: "last" },
+  { word: "بحر", emoji: "🌊", letter: "ب", position: "first" },
+  { word: "بحر", emoji: "🌊", letter: "ح", position: "middle" },
+  { word: "بحر", emoji: "🌊", letter: "ر", position: "last" },
+  { word: "وردة", emoji: "🌹", letter: "و", position: "first" },
+  { word: "وردة", emoji: "🌹", letter: "ر", position: "middle" },
+  { word: "وردة", emoji: "🌹", letter: "ة", position: "last" },
+  { word: "تفاحة", emoji: "🍎", letter: "ت", position: "first" },
+  { word: "تفاحة", emoji: "🍎", letter: "ف", position: "middle" },
+  { word: "تفاحة", emoji: "🍎", letter: "ة", position: "last" },
+  { word: "سمكة", emoji: "🐟", letter: "س", position: "first" },
+  { word: "سمكة", emoji: "🐟", letter: "م", position: "middle" },
+  { word: "سمكة", emoji: "🐟", letter: "ة", position: "last" },
+  { word: "نحلة", emoji: "🐝", letter: "ن", position: "first" },
+  { word: "نحلة", emoji: "🐝", letter: "ح", position: "middle" },
+  { word: "نحلة", emoji: "🐝", letter: "ة", position: "last" },
+  { word: "أرنب", emoji: "🐇", letter: "أ", position: "first" },
+  { word: "أرنب", emoji: "🐇", letter: "ر", position: "middle" },
+  { word: "أرنب", emoji: "🐇", letter: "ب", position: "last" },
+  { word: "حصان", emoji: "🐴", letter: "ح", position: "first" },
+  { word: "حصان", emoji: "🐴", letter: "ص", position: "middle" },
+  { word: "حصان", emoji: "🐴", letter: "ن", position: "last" },
+  { word: "قطار", emoji: "🚂", letter: "ق", position: "first" },
+  { word: "قطار", emoji: "🚂", letter: "ط", position: "middle" },
+  { word: "قطار", emoji: "🚂", letter: "ر", position: "last" },
+  { word: "زهرة", emoji: "🌸", letter: "ز", position: "first" },
+  { word: "زهرة", emoji: "🌸", letter: "ه", position: "middle" },
+  { word: "زهرة", emoji: "🌸", letter: "ة", position: "last" },
+  { word: "عصفور", emoji: "🐦", letter: "ع", position: "first" },
+  { word: "عصفور", emoji: "🐦", letter: "ص", position: "middle" },
+  { word: "عصفور", emoji: "🐦", letter: "ر", position: "last" },
+  { word: "مكتبة", emoji: "📚", letter: "م", position: "first" },
+  { word: "مكتبة", emoji: "📚", letter: "ك", position: "middle" },
+  { word: "مكتبة", emoji: "📚", letter: "ة", position: "last" },
+  { word: "حديقة", emoji: "🌳", letter: "ح", position: "first" },
+  { word: "حديقة", emoji: "🌳", letter: "د", position: "middle" },
+  { word: "حديقة", emoji: "🌳", letter: "ة", position: "last" },
+  { word: "ملعب", emoji: "⚽", letter: "م", position: "first" },
+  { word: "ملعب", emoji: "⚽", letter: "ل", position: "middle" },
+  { word: "ملعب", emoji: "⚽", letter: "ب", position: "last" },
+  { word: "شجرة", emoji: "🌳", letter: "ش", position: "first" },
+  { word: "شجرة", emoji: "🌳", letter: "ج", position: "middle" },
+  { word: "شجرة", emoji: "🌳", letter: "ة", position: "last" },
+  { word: "فراشة", emoji: "🦋", letter: "ف", position: "first" },
+  { word: "فراشة", emoji: "🦋", letter: "ر", position: "middle" },
+  { word: "فراشة", emoji: "🦋", letter: "ة", position: "last" },
+  { word: "سحابة", emoji: "☁️", letter: "س", position: "first" },
+  { word: "سحابة", emoji: "☁️", letter: "ح", position: "middle" },
+  { word: "سحابة", emoji: "☁️", letter: "ة", position: "last" },
+  { word: "هدية", emoji: "🎁", letter: "ه", position: "first" },
+  { word: "هدية", emoji: "🎁", letter: "د", position: "middle" },
+  { word: "هدية", emoji: "🎁", letter: "ة", position: "last" },
+  { word: "تمساح", emoji: "🐊", letter: "ت", position: "first" },
+  { word: "تمساح", emoji: "🐊", letter: "م", position: "middle" },
+  { word: "تمساح", emoji: "🐊", letter: "ح", position: "last" },
+  { word: "خيار", emoji: "🥒", letter: "خ", position: "first" },
+  { word: "خيار", emoji: "🥒", letter: "ي", position: "middle" },
+  { word: "خيار", emoji: "🥒", letter: "ر", position: "last" },
+  { word: "رمان", emoji: "🍎", letter: "ر", position: "first" },
+  { word: "رمان", emoji: "🍎", letter: "م", position: "middle" },
+  { word: "رمان", emoji: "🍎", letter: "ن", position: "last" },
+  { word: "ليمون", emoji: "🍋", letter: "ل", position: "first" },
+  { word: "ليمون", emoji: "🍋", letter: "م", position: "middle" },
+  { word: "ليمون", emoji: "🍋", letter: "ن", position: "last" },
+];
+
+export const POSITION_LABELS = {
+  first: "أول الكلمة",
+  middle: "وسط الكلمة",
+  last: "آخر الكلمة",
+};
+
+/** محطات القطار */
+export const TRAIN_STATIONS = [
+  { emoji: "🌙", word: "قمر", letter: "ق" },
+  { emoji: "☀️", word: "شمس", letter: "ش" },
+  { emoji: "🐟", word: "سمكة", letter: "س" },
+  { emoji: "🍎", word: "تفاحة", letter: "ت" },
+  { emoji: "🐘", word: "فيل", letter: "ف" },
+  { emoji: "🦁", word: "أسد", letter: "ا" },
+  { emoji: "🌹", word: "وردة", letter: "و" },
+  { emoji: "📘", word: "كتاب", letter: "ك" },
+  { emoji: "🐝", word: "نحلة", letter: "ن" },
+  { emoji: "⛰️", word: "جبل", letter: "ج" },
+  { emoji: "🍇", word: "عنب", letter: "ع" },
+  { emoji: "🚂", word: "قطار", letter: "ق" },
+];
+
+/** أسئلة متنوعة للعبة السريعة */
+export const QUICK_TIPS = [
+  "الحروف العربية تُكتب من اليمين إلى اليسار.",
+  "حرف الألف لا يتصل بالحرف الذي بعده.",
+  "عدد الحروف العربية 28 حرفًا.",
+  "اللغة العربية تُسمى لغة الضاد.",
+  "الحروف الشمسية والقمرية تساعدنا على النطق الصحيح.",
+];
+
+/** نصائح للوالدين */
+export const PARENT_TIPS = [
+  "خصّص 10 دقائق يوميًا للعب مع طفلك؛ التكرار القصير أفضل من الجلسات الطويلة.",
+  "اطلب من طفلك أن ينطق الحرف بصوت عالٍ بعد سماعه.",
+  "اربط الحرف بشيء في المنزل، مثل: باء باب، ميم ملعقة.",
+  "احتفل بكل إنجاز صغير؛ النجوم في التطبيق ليست بديلًا عن تشجيعك.",
+  "اجعل وقت الشاشة متوازنًا مع اللعب الحركي والقراءة الورقية.",
+  "لا تصحح الخطأ فورًا؛ امنح طفلك فرصة المحاولة الثانية.",
+];

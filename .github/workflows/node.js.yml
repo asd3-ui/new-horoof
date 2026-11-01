@@ -1,0 +1,30 @@
+name: Expo Android Bundle Check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Expo dependencies and Android bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.x"
+      - name: Install dependencies
+        run: npm install
+      - name: Check Expo SDK dependency versions
+        run: npx expo install --check
+      - name: Bundle Android JavaScript
+        run: npx expo export --platform android

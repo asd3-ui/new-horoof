@@ -1,0 +1,14 @@
+
+node_modules/
+.expo/
+dist/
+dist-check/
+build/
+.tmp-*
+android/
+ios/
+*.jks
+*.keystore
+.env
+.DS_Store
+*.log

@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "حروفي المرحة",
+    "slug": "haroofi-al-marah",
+    "version": "2.0.0",
+    "description": "لعبة عربية تفاعلية للأطفال لتعلّم الحروف والكلمات والأرقام والأشكال",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "haroofi",
+    "backgroundColor": "#FFF8F0",
+    "primaryColor": "#6C5CE7",
+    "icon": "./assets/images/icon.png",
+    "assetBundlePatterns": ["**/*"],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F0"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#FFF8F0",
+      "barStyle": "dark-content"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.asd3ui.haroofialmarah"
+    },
+    "android": {
+      "package": "com.asd3ui.haroofialmarah",
+      "versionCode": 2,
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#FFF8F0"
+      }
+    },
+    "extra": {
+      "supportedLocales": ["ar"]
+    }
+  }
+}
