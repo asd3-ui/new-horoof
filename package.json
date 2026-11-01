@@ -1,6 +1,6 @@
 {
   "name": "haroofi-al-marah",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "description": "لعبة تعليمية عربية تفاعلية للأطفال لتعلّم الحروف والكلمات عبر 15 نشاطًا",
   "main": "node_modules/expo/AppEntry.js",
@@ -23,7 +23,9 @@
     "react-native-svg": "15.12.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2"
+    "@babel/core": "^7.25.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0"
   },
   "engines": {
     "node": ">=20.19.0"

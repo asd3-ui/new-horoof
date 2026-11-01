@@ -41,7 +41,7 @@ export default class ErrorBoundary extends React.Component {
           >
             <Text style={styles.buttonText}>🔄 إعادة المحاولة</Text>
           </Pressable>
-          <Text style={styles.debug} numberOfLines={4}>
+          <Text style={styles.debug} numberOfLines={8}>
             {String(this.state.error?.message || this.state.error || "")}
           </Text>
         </ScrollView>
@@ -84,7 +84,8 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   debug: {
     marginTop: 26,
-    fontSize: 10,
+    fontSize: 13,
+    lineHeight: 18,
     color: PALETTE.inkMuted,
     textAlign: "center",
   },

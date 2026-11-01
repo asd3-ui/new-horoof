@@ -11,6 +11,7 @@ import {
   AppText,
   Card,
   MascotBubble,
+  Page,
   PrimaryButton,
   ProgressBar,
   SectionTitle,
