@@ -18,6 +18,7 @@ import { PALETTE } from "./src/theme";
 
 import Background from "./src/components/Background";
 import Confetti from "./src/components/Confetti";
+import ErrorBoundary from "./src/components/ErrorBoundary";
 import Toast from "./src/components/Toast";
 import { AppText } from "./src/components/UI";
 
@@ -188,7 +189,9 @@ function normalizeProfile(raw) {
 export default function App() {
   return (
     <SafeAreaProvider style={styles.provider}>
-      <AppShell />
+      <ErrorBoundary>
+        <AppShell />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

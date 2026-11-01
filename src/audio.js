@@ -2,8 +2,6 @@ import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import { Vibration } from "react-native";
 
-let voicesCache = null;
-let voicesPromise = null;
 const soundCache = new Map();
 const prefs = { sound: true, haptics: true };
 
@@ -26,36 +24,21 @@ export async function initAudio() {
   }
 }
 
-async function getVoices() {
-  if (voicesCache) return voicesCache;
-  if (!voicesPromise) {
-    voicesPromise = Speech.getAvailableVoicesAsync()
-      .then((voices) => {
-        voicesCache = Array.isArray(voices) ? voices : [];
-        return voicesCache;
-      })
-      .catch(() => {
-        voicesCache = [];
-        return voicesCache;
-      });
-  }
-  return voicesPromise;
-}
-
-/** ينطق نصًا عربيًا باستخدام أفضل صوت عربي متاح على الجهاز */
+/**
+ * ينطق نصًا عربيًا.
+ *
+ * مهم: لا نستدعي `Speech.getAvailableVoicesAsync()` إطلاقًا.
+ * في إصدارات expo-speech الحالية يوجد خطأ أصلي (NullPointerException) داخل
+ * LanguageUtils أثناء تهيئة محرك النطق على بعض أجهزة أندرويد، وكان يؤدي إلى
+ * إغلاق التطبيق فور أول محاولة نطق. الاعتماد على `language` فقط يجعل محرك
+ * النطق يختار الصوت العربي المناسب تلقائيًا ويتجنب هذا الانهيار تمامًا.
+ */
 export async function speakText(text, options = {}) {
   if (!prefs.sound || !text) return;
   try {
-    const voices = await getVoices();
-    const arabicVoice =
-      voices.find((voice) => /^ar[-_]/i.test(voice.language || "")) ||
-      voices.find((voice) => /arab/i.test(voice.name || "")) ||
-      null;
-
-    await Speech.stop();
+    stopSpeaking();
     Speech.speak(String(text), {
-      language: arabicVoice?.language || "ar-SA",
-      voice: arabicVoice?.identifier,
+      language: options.language || "ar-SA",
       rate: options.rate ?? 0.82,
       pitch: options.pitch ?? 1.15,
       volume: options.volume ?? 1,
@@ -67,7 +50,14 @@ export async function speakText(text, options = {}) {
 }
 
 export function stopSpeaking() {
-  Speech.stop().catch(() => {});
+  try {
+    const result = Speech.stop();
+    if (result && typeof result.catch === "function") {
+      result.catch(() => {});
+    }
+  } catch (error) {
+    // تجاهل أخطاء إيقاف النطق.
+  }
 }
 
 /* مؤثرات محلية قصيرة تعمل بدون إنترنت وتحافظ على خصوصية الطفل */

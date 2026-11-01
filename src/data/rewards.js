@@ -10,7 +10,8 @@ export const LEVELS = [
 ];
 
 export const getLevelInfo = (stars = 0) => {
-  const unlocked = LEVELS.filter((item) => stars >= item.required).at(-1) || LEVELS[0];
+  const unlockedLevels = LEVELS.filter((item) => stars >= item.required);
+  const unlocked = unlockedLevels[unlockedLevels.length - 1] || LEVELS[0];
   const nextLevel = LEVELS.find((item) => item.required > stars) || null;
   const span = nextLevel ? nextLevel.required - unlocked.required : 1;
   const progress = nextLevel

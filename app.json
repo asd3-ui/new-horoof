@@ -2,7 +2,7 @@
   "expo": {
     "name": "حروفي المرحة",
     "slug": "haroofi-al-marah",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "لعبة عربية تفاعلية للأطفال لتعلّم الحروف والكلمات والأرقام والأشكال",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -26,7 +26,7 @@
     },
     "android": {
       "package": "com.asd3ui.haroofialmarah",
-      "versionCode": 2,
+      "versionCode": 3,
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
