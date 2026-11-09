@@ -5,6 +5,8 @@ dist/
 dist-check/
 build/
 .tmp-*
+reference/
+*.apk
 android/
 ios/
 *.jks

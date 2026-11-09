@@ -1,13 +1,30 @@
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import { Vibration } from "react-native";
+import { VOICE_CLIPS } from "./voice-clips";
 
 const soundCache = new Map();
 
-const prefs = { sound: true, haptics: true, voiceId: "wafy" };
+const prefs = { sound: true, haptics: true, voiceId: "app" };
 
-/** القارئان المتاحان في التطبيق (ولا يعتمد أي منهما على تعداد أصوات الجهاز الأصلية) */
+/**
+ * القرّاء المتاحون في التطبيق.
+ *
+ * `app` هو صوت التطبيق الخاص: مقاطع mp3 عربية مسجّلة مسبقًا ومدمجة داخل
+ * التطبيق (مجلد assets/voice) تعمل دون إنترنت ولا تعتمد على محرك نطق الجهاز.
+ * عند عدم توفّر مقطع لنصٍّ ما يرجع التطبيق تلقائيًا إلى محرك نطق الجهاز
+ * بالقارئين `wafy` و`noor` (نفس الصوت مع سرعة وطبقة مختلفتين).
+ */
 export const VOICES = [
+  {
+    id: "app",
+    name: "حروفي",
+    subtitle: "صوت التطبيق الأصلي — واضح ومسجّل خصيصًا للحروف والكلمات",
+    rate: 1,
+    pitch: 1,
+    emoji: "🎙️",
+    builtin: true,
+  },
   {
     id: "wafy",
     name: "وافي المبهج",
@@ -47,6 +64,73 @@ export async function initAudio() {
   }
 }
 
+/* --------------------------- صوت التطبيق (مقاطع mp3) --------------------------- */
+
+const clipCache = new Map();
+let clipSound = null;
+let clipToken = 0;
+
+/** يوقف المقطع الجاري ويتجاهل أي مقطع قيد التحميل */
+function haltClip() {
+  clipToken += 1;
+  const sound = clipSound;
+  clipSound = null;
+  if (sound) {
+    try {
+      const result = sound.stopAsync();
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch (error) {
+      // تجاهل أخطاء الإيقاف.
+    }
+  }
+}
+
+/**
+ * يشغّل مقطع التطبيق المطابق للنص إن وُجد.
+ * يعيد `true` إذا شُغّل المقطع، و`false` إذا لم يوجد (ليستخدم المنادي محرك الجهاز).
+ * `onDone` يُستدعى عند انتهاء التشغيل أو إلغائه.
+ */
+async function playClip(text, onDone) {
+  const source = VOICE_CLIPS[text];
+  if (!source) return false;
+
+  const token = clipToken + 1;
+  haltClip();
+  clipToken = token;
+
+  try {
+    let sound = clipCache.get(text);
+    if (!sound) {
+      const created = await Audio.Sound.createAsync(source, { volume: 1, shouldPlay: false });
+      sound = created.sound;
+      clipCache.set(text, sound);
+    }
+    if (token !== clipToken) {
+      // أُلغي الطلب أثناء تحميل المقطع.
+      onDone?.();
+      return true;
+    }
+
+    clipSound = sound;
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (!status || !status.didJustFinish) return;
+      sound.setOnPlaybackStatusUpdate(null);
+      if (clipSound === sound) clipSound = null;
+      onDone?.();
+    });
+    await sound.replayAsync();
+    return true;
+  } catch (error) {
+    // مقطع تالف أو غير مدعوم: نرجع إلى محرك الجهاز.
+    return false;
+  }
+}
+
+/** يشغّل مقطع التطبيق لنص واحد (للاستخدام المباشر عند الحاجة) */
+export function hasAppClip(text) {
+  return Boolean(VOICE_CLIPS[String(text)]);
+}
+
 /**
  * إعدادات النطق الأساسية.
  *
@@ -60,19 +144,27 @@ function speakOptions(options = {}) {
   const voice = getVoiceProfile();
   return {
     language: "ar-SA",
-    rate: options.rate ?? voice.rate,
-    pitch: options.pitch ?? voice.pitch,
+    rate: options.rate ?? (voice.builtin ? 0.85 : voice.rate),
+    pitch: options.pitch ?? (voice.builtin ? 1.05 : voice.pitch),
     volume: options.volume ?? 1,
     onError: () => {},
   };
 }
 
-/** ينطق نصًا عربيًا واحدًا */
+/** ينطق نصًا عربيًا واحدًا (صوت التطبيق أولًا ثم صوت الجهاز) */
 export async function speakText(text, options = {}) {
   if (!prefs.sound || !text) return;
+  const value = String(text);
+  stopSpeaking();
+
+  const voice = getVoiceProfile();
+  if (voice.builtin) {
+    const played = await playClip(value);
+    if (played) return;
+  }
+
   try {
-    stopSpeaking();
-    Speech.speak(String(text), speakOptions(options));
+    Speech.speak(value, speakOptions(options));
   } catch (error) {
     // التطبيق يستمر بالعمل حتى لو لم يتوفر محرك النطق.
   }
@@ -86,8 +178,8 @@ const activeSequences = new Set();
  * الجاري نطقه حاليًا حتى يُظلل الاختيار المقروء.
  *
  * يعيد دالة `cancel()` التي توقف السلسلة فورًا وتمنع أي متابَع لاحق.
- * يعتمد الدوران على حدث onDone مع مؤقت أمان تقديري يضمن التقدم حتى لو
- * كان محرك النطق لا يرسل أحداث الاكتمال على بعض الأجهزة.
+ * يعتمد الدوران على حدث انتهاء المقطع أو onDone مع مؤقت أمان تقديري يضمن
+ * التقدم حتى لو كان محرك النطق لا يرسل أحداث الاكتمال على بعض الأجهزة.
  */
 export function speakSequence(items, opts = {}) {
   const startDelayMs = opts.startDelayMs ?? 380;
@@ -138,15 +230,34 @@ export function speakSequence(items, opts = {}) {
       schedule(next, gapMs);
     };
 
-    try {
-      Speech.speak(text, { ...speakOptions(), onDone: advance, onError: advance });
-    } catch (error) {
-      advance();
+    const speakWithDevice = () => {
+      try {
+        Speech.speak(text, { ...speakOptions(), onDone: advance, onError: advance });
+      } catch (error) {
+        advance();
+        return;
+      }
+      // مؤقت أمان: مدة تقديرية كافية لنطق السطر الحالي حتى لو انقطعت أحداث المحرك.
+      const estimate = Math.min(12000, 1050 + text.length * 175);
+      schedule(advance, estimate);
+    };
+
+    const voice = getVoiceProfile();
+    if (voice.builtin) {
+      playClip(text, advance).then((played) => {
+        if (stopped) return;
+        if (!played) {
+          speakWithDevice();
+          return;
+        }
+        // مؤقت أمان أطول لأن المقاطع المسجّلة أبطأ من النطق الآلي.
+        const estimate = Math.min(20000, 1400 + text.length * 210);
+        schedule(advance, estimate);
+      });
       return;
     }
-    // مؤقت أمان: مدة تقديرية كافية لنطق السطر الحالي حتى لو انقطعت أحداث المحرك.
-    const estimate = Math.min(12000, 1050 + text.length * 175);
-    schedule(advance, estimate);
+
+    speakWithDevice();
   };
 
   activeSequences.add(cancel);
@@ -160,6 +271,7 @@ export function stopSpeaking() {
     cancel();
   }
   activeSequences.clear();
+  haltClip();
   try {
     const result = Speech.stop();
     if (result && typeof result.catch === "function") {
@@ -210,4 +322,8 @@ export async function releaseAudio() {
     sound?.unloadAsync?.().catch?.(() => {});
   }
   soundCache.clear();
+  for (const sound of clipCache.values()) {
+    sound?.unloadAsync?.().catch?.(() => {});
+  }
+  clipCache.clear();
 }

@@ -5,16 +5,6 @@ export const CHARACTERS = [
   { id: "koko", name: "كوكو", emoji: "🦊", accent: "#FFB062", description: "شجاع وذكي ويحب التحدي" },
   { id: "mama", name: "ماما", emoji: "🐼", accent: "#9AC8FF", description: "هادئة وداعمة وتحب التعلم" },
   { id: "nono", name: "نونو", emoji: "🐻", accent: "#A9D39E", description: "مرح ومبدع في كل نشاط" },
-  { id: "lulu", name: "لولو", emoji: "🐨", accent: "#C7B8FF", description: "تحب الأغاني وتكرار الحروف" },
-  { id: "simba", name: "سيمبا", emoji: "🦁", accent: "#FFD37A", description: "قائد صغير لا يستسلم أبدًا" },
-  /* شخصيات كرتونية إضافية بأسلوب ثلاثي الأبعاد (رموز ظل عميق) */
-  { id: "momo", name: "مومو", emoji: "🐵", accent: "#F7B267", description: "قرد سريع يقفز بين الحروف" },
-  { id: "tota", name: "توتا", emoji: "🦜", accent: "#7ED6A5", description: "ببغاء ملون يحب الكلمات القصيرة" },
-  { id: "zizo", name: "زيزو", emoji: "🐝", accent: "#FFE07D", description: "نحلة نشيطة تجمع أصدقاء الحروف" },
-  { id: "tuta", name: "توتو", emoji: "🐢", accent: "#B8E1FF", description: "سلاحف مطمئنة تتعلّم حرفًا كل يوم" },
-
-  { id: "fofo", name: "فوفو", emoji: "🦄", accent: "#E4B7FF", description: "وحش خيالي لطيف يجمع أسماء الحروف" },
-  { id: "dodo", name: "دودو", emoji: "🐧", accent: "#B5EAEA", description: "بطريق الثلج يتهجّى كلمةً جديدة كل يوم" },
 ];
 
 export const getCharacterById = (id) => CHARACTERS.find((item) => item.id === id) || CHARACTERS[0];

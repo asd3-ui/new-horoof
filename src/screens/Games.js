@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { PALETTE, ROW, SHADOW_SOFT  } from "../theme";
-import { AppText, MissingSlotWord, RedLetterWord } from "../components/UI";
+import { AppText, MissingSlotWord } from "../components/UI";
 import ShapeIcon from "../components/ShapeIcon";
 import QuizGame from "./QuizGame";
 import {
@@ -101,14 +101,18 @@ function PositionPrompt({ round, helpers }) {
   return (
     <View style={styles.promptCenter}>
       <AppText style={styles.bigEmoji}>{target.emoji}</AppText>
-      {/* كلمة واحدة متصلة مع الحرف المقصود بالأحمر */}
-      <RedLetterWord
-        word={target.word}
-        letter={target.letter}
-        style={styles.positionWord}
-        redStyle={styles.positionLetter}
-      />
-      <AppText style={styles.promptHint}>أين يقع الحرف الملوّن؟</AppText>
+      {/* الكلمة كاملة في سطر واحد وبحروف متصلة (نص واحد بلا تقسيم) */}
+      <AppText style={styles.positionWord} numberOfLines={1} adjustsFontSizeToFit>
+        {target.word}
+      </AppText>
+      {/* الحرف المقصود بالأحمر في بطاقة مستقلة تحت الكلمة */}
+      <View style={styles.positionLetterRow}>
+        <View style={styles.positionLetterChip}>
+          <AppText style={styles.positionLetterBig}>{target.letter}</AppText>
+        </View>
+        <AppText style={styles.positionLetterLabel}>الحرف المطلوب</AppText>
+      </View>
+      <AppText style={styles.promptHint}>أين يقع هذا الحرف في الكلمة؟</AppText>
       <ReplayButton text={`أين يقع حرف ${target.letter} في كلمة ${target.word}؟`} label="استمع إلى السؤال" />
     </View>
   );
@@ -457,8 +461,21 @@ const styles = StyleSheet.create({
   replayText: { fontSize: 12, fontWeight: "800", color: PALETTE.primaryDark },
   missingRow: { flexDirection: ROW, alignItems: "center", marginTop: 6, gap: 6 },
   missingRest: { fontSize: 52, fontWeight: "900", color: PALETTE.ink },
-  positionWord: { fontSize: 46, fontWeight: "900", color: PALETTE.ink, marginTop: 6, textAlign: "center" },
-  positionLetter: { color: PALETTE.coral, textDecorationLine: "underline" },
+  positionWord: { fontSize: 46, fontWeight: "900", color: PALETTE.ink, marginTop: 6, textAlign: "center", width: "100%" },
+  positionLetterRow: { flexDirection: ROW, alignItems: "center", gap: 8, marginTop: 8 },
+  positionLetterChip: {
+    minWidth: 52,
+    height: 52,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: "#FFE7E2",
+    borderWidth: 2,
+    borderColor: PALETTE.coral,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  positionLetterBig: { fontSize: 32, fontWeight: "900", color: PALETTE.coral, textAlign: "center" },
+  positionLetterLabel: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
   oppositeWord: { fontSize: 40, fontWeight: "900", color: PALETTE.ink, marginTop: 4 },
   countGrid: {
     flexDirection: ROW,

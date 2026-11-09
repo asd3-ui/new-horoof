@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PanResponder, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, Path, Polyline } from "react-native-svg";
 import { useApp } from "../context";
 import { speakText, playSfx, buzz } from "../audio";
 import { LETTERS, getLetterById } from "../data/letters";
 import { SHAPES } from "../data/games";
 import { getLetterGuide, getShapeGuide } from "../data/trace";
-import { BRUSH_COLORS, PALETTE, ROW, SHADOW_SOFT, clamp, useResponsive } from "../theme";
+import { BRUSH_COLORS, PALETTE, ROW, SHADOW_SOFT, useResponsive } from "../theme";
 import {
   AppText,
   Card,
@@ -21,12 +21,12 @@ import ShapeIcon from "../components/ShapeIcon";
 const BRUSH_SIZES = [8, 14, 22];
 
 /**
- * لعبة «لوّن واكتب» المعدّلة.
+ * لعبة «لوّن واكتب» بنظام «المس النقطة المضيئة».
  *
- * التلوين الصحيح لن يعتمد بعد الآن على طول الخط المسحوب — بل على ملامس نقاط
- * خط الحرف نفسه بالترتيب الصحيح (اتجاه الكتابة العربي: من اليمين إلى اليسار،
- * ومن الأعلى إلى الأسفل). الرسم في الفراغ المحيط لا يزيد التقدم، ولا تظهر
- * علامة «تم» إلا بعد اكتمال الحرف بشكله الصحيح.
+ * بدلًا من الرسم الحر (الذي كان يتأثر بإحداثيات اللمس وينحرف عن الحرف)،
+ * يلمس الطفل النقاط الإرشادية بالترتيب نفسه الموجود في بطاقات تعليم الكتابة:
+ * نقطة البداية الخضراء، ثم كل نقطة مضيئة، حتى آخر نقطة. يُرسم الجزء المكتمل
+ * من الحرف بلون الطفل، فلا يمكن أبدًا التلوين خارج خط الحرف.
  */
 export default function TracingGame() {
   const { params, navigate, addStars, recordActivity, celebrate } = useApp();
@@ -43,21 +43,13 @@ export default function TracingGame() {
   const shape = SHAPES.find((item) => item.id === shapeId) || SHAPES[0];
 
   const [size, setSize] = useState({ width: 300, height: 260 });
-  const sizeRef = useRef(size);
-  const [paths, setPaths] = useState([]);
-  const pathsRef = useRef([]);
-  const [current, setCurrent] = useState("");
-  const currentRef = useRef("");
-  const [progress, setProgress] = useState(0);
-  const progressRef = useRef(0);
+  const [drawn, setDrawn] = useState([]);
   const [hitIndex, setHitIndex] = useState(0);
-  const hitIndexRef = useRef(0);
   const [done, setDone] = useState(false);
-  const doneRef = useRef(false);
   const [color, setColor] = useState(BRUSH_COLORS[0]);
   const [brush, setBrush] = useState(14);
-
-  const completeRef = useRef(() => {});
+  const doneRef = useRef(false);
+  const hintAtRef = useRef(0);
 
   /* ------------------------------ المسار الإرشادي ------------------------------ */
   const guide = useMemo(
@@ -65,68 +57,50 @@ export default function TracingGame() {
     [mode, shape?.id, letter?.letter]
   );
 
-  /** تحويل نقاط الشبكة 0..100 إلى بكسل الشاشة */
+  /** تحويل نقاط الشبكة 0..100 إلى بكسل داخل مساحة الرسم */
   const toPx = useCallback(
-    (point) => {
-      const { width, height: canvasHeight } = sizeRef.current;
-      const box = Math.min(width, canvasHeight) * 0.86;
-      return {
-        x: width / 2 + ((point[0] - 50) / 100) * box,
-        y: canvasHeight / 2 + ((point[1] - 50) / 100) * box,
-      };
-    },
-    []
+    (point, box) => ({
+      x: size.width / 2 + ((point[0] - 50) / 100) * box,
+      y: size.height / 2 + ((point[1] - 50) / 100) * box,
+    }),
+    [size.width, size.height]
   );
+
+  const box = Math.min(size.width, size.height) * 0.86;
 
   const waypoints = useMemo(() => {
     if (!guide) return [];
     const result = [];
     guide.strokes.forEach((stroke, strokeIndex) => {
-      stroke.forEach((point, pointIndex) => {
-        const pixel = toPx(point);
-        result.push({ ...pixel, strokeIndex, isDot: stroke.length === 1, index: result.length });
+      stroke.forEach((point) => {
+        const pixel = toPx(point, box);
+        result.push({
+          ...pixel,
+          strokeIndex,
+          isDot: stroke.length === 1,
+          index: result.length,
+        });
       });
     });
     return result;
-    // يعاد الحساب عند تغيّر الحجم أو المسار
-  }, [guide, toPx, size.width, size.height]);
+  }, [guide, toPx, box]);
 
-  const waypointsRef = useRef(waypoints);
-  waypointsRef.current = waypoints;
-  const totalWaypoints = waypoints.length;
-  const totalWaypointsRef = useRef(totalWaypoints);
-  totalWaypointsRef.current = totalWaypoints;
-  const tolerance = Math.max(20, Math.min(size.width, size.height) * 0.13);
-  const toleranceRef = useRef(tolerance);
-  toleranceRef.current = tolerance;
-
-  /* ------------------------------ مفاتيح الحالة ------------------------------ */
-
-  const updateProgress = useCallback((newHit) => {
-    const total = totalWaypointsRef.current || 1;
-    const value = Math.min(100, (newHit / total) * 100);
-    progressRef.current = value;
-    setProgress(value);
-  }, []);
+  const total = waypoints.length;
+  const progress = total ? Math.round((hitIndex / total) * 100) : 0;
+  const nextIndex = hitIndex < total ? hitIndex : -1;
 
   const reset = useCallback(() => {
-    pathsRef.current = [];
-    setPaths([]);
-    currentRef.current = "";
-    setCurrent("");
-    hitIndexRef.current = 0;
+    setDrawn([]);
     setHitIndex(0);
-    updateProgress(0);
-    doneRef.current = false;
     setDone(false);
-  }, [updateProgress]);
+    doneRef.current = false;
+    hintAtRef.current = 0;
+  }, []);
 
-  const complete = () => {
+  const complete = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
     setDone(true);
-    setProgress(100);
-    progressRef.current = 100;
     addStars(1);
     recordActivity("tracing", 1, 1);
     playSfx("clap");
@@ -138,78 +112,45 @@ export default function TracingGame() {
       confetti: true,
     });
     speakText(mode === "shape" ? `أحسنت! رسمت ${shape.name}` : `أحسنت! كتبت حرف ${letter.name}`);
+  }, [addStars, celebrate, letter.name, mode, recordActivity, shape.name]);
+
+  /** لمس نقطة: يُقبل فقط الترتيب الصحيح */
+  const tapWaypoint = (point) => {
+    if (doneRef.current) return;
+
+    if (point.index !== hitIndex) {
+      // لمسة خارج الترتيب: تنبيه لطيف دون عقاب
+      if (Date.now() - hintAtRef.current > 2200) {
+        hintAtRef.current = Date.now();
+        speakText("ابدأ من النقطة الخضراء واتبع الترتيب");
+        buzz(16);
+      }
+      return;
+    }
+
+    const previous = hitIndex > 0 ? waypoints[hitIndex - 1] : null;
+    const sameStroke = previous && previous.strokeIndex === point.strokeIndex;
+    const segment = sameStroke
+      ? { type: "line", a: previous, b: point, color, brush }
+      : { type: "dot", p: point, color, brush };
+
+    const nextDrawn = [...drawn, segment];
+    const nextHit = hitIndex + 1;
+    setDrawn(nextDrawn);
+    setHitIndex(nextHit);
+    playSfx("pop");
+    buzz(8);
+
+    if (nextHit >= total) complete();
   };
-  completeRef.current = complete;
 
-  /** فحص اللمسة: هل قرّبت من النقطة التالية بالترتيب؟ */
-  const tryHit = useCallback(
-    (x, y) => {
-      if (doneRef.current) return false;
-      const nextIndex = hitIndexRef.current;
-      const list = waypointsRef.current;
-      if (!list.length || nextIndex >= list.length) return false;
-      const target = list[nextIndex];
-      const distance = Math.hypot(x - target.x, y - target.y);
-      if (distance > toleranceRef.current) return false;
-
-      const nextIndex2 = nextIndex + 1;
-      hitIndexRef.current = nextIndex2;
-      setHitIndex(nextIndex2);
-      updateProgress(nextIndex2);
-      playSfx("pop");
-      buzz(8);
-      if (nextIndex2 >= list.length) {
-        completeRef.current();
-      }
-      return true;
-    },
-    [updateProgress]
-  );
-
-  const panResponder = useMemo(() => {
-    const finishStroke = () => {
-      if (currentRef.current) {
-        pathsRef.current = [...pathsRef.current, { d: currentRef.current, hitIndex: hitIndexRef.current }];
-        setPaths(pathsRef.current);
-      }
-      currentRef.current = "";
-      setCurrent("");
-    };
-
-    const point = (event) => ({
-      x: clamp(event.nativeEvent.locationX, 0, sizeRef.current.width),
-      y: clamp(event.nativeEvent.locationY, 0, sizeRef.current.height),
-    });
-
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => true,
-      onPanResponderGrant: (event) => {
-        if (doneRef.current) return;
-        const { x, y } = point(event);
-        tryHit(x, y);
-        const next = `M ${x.toFixed(1)} ${y.toFixed(1)}`;
-        currentRef.current = next;
-        setCurrent(next);
-      },
-      onPanResponderMove: (event) => {
-        if (doneRef.current) return;
-        const { x, y } = point(event);
-        tryHit(x, y);
-        const parts = currentRef.current.split(" ");
-        const lastX = Number(parts[parts.length - 2] || 0);
-        const lastY = Number(parts[parts.length - 1] || 0);
-        const distance = Math.hypot(x - lastX, y - lastY);
-        if (distance < 1.5) return;
-        currentRef.current = `${currentRef.current} L ${x.toFixed(1)} ${y.toFixed(1)}`;
-        setCurrent(currentRef.current);
-      },
-      onPanResponderRelease: finishStroke,
-      onPanResponderTerminate: finishStroke,
-    });
-  }, [tryHit]);
+  const undo = () => {
+    if (!drawn.length) return;
+    setDrawn(drawn.slice(0, -1));
+    setHitIndex(Math.max(0, hitIndex - 1));
+    doneRef.current = false;
+    setDone(false);
+  };
 
   const goLetter = (delta) => {
     const next = getLetterById((letterId + delta + LETTERS.length) % LETTERS.length);
@@ -232,26 +173,14 @@ export default function TracingGame() {
 
   const canvasHeight = Math.max(240, Math.min(360, height * 0.36));
 
-  const undo = () => {
-    if (!pathsRef.current.length) return;
-    const removed = pathsRef.current[pathsRef.current.length - 1];
-    pathsRef.current = pathsRef.current.slice(0, -1);
-    setPaths(pathsRef.current);
-    const nextHit = removed?.hitIndex ?? 0;
-    hitIndexRef.current = nextHit;
-    setHitIndex(nextHit);
-    updateProgress(nextHit);
-    doneRef.current = false;
-    setDone(false);
-  };
-
-  const nextWaypointIndex = Math.min(hitIndex, totalWaypoints - 1);
+  const startPoint = waypoints[0];
+  const endPoint = total > 1 ? waypoints[total - 1] : null;
 
   return (
     <Page>
       <ScreenHeader
         title={mode === "shape" ? "لوّن الأشكال" : "لوّن الحروف"}
-        subtitle="املأ نقاط الحرف نفسه بالترتيب من اليمين"
+        subtitle="المس النقاط المضيئة بالترتيب من نقطة البداية"
         onBack={() => navigate(mode === "shape" ? "games" : "letters")}
       />
 
@@ -288,96 +217,153 @@ export default function TracingGame() {
           style={[styles.canvas, { height: canvasHeight }]}
           onLayout={(event) => {
             const { width, height: layoutHeight } = event.nativeEvent.layout;
-            const nextSize = { width, height: layoutHeight };
-            sizeRef.current = nextSize;
-            setSize(nextSize);
+            setSize({ width, height: layoutHeight });
           }}
-          {...panResponder.panHandlers}
         >
-          {/* الحرف الحقيقي الباهت خلف نقاط الإرشاد */}
-          {mode === "letter" ? (
-            <AppText
-              pointerEvents="none"
-              style={[
-                styles.guideLetter,
-                { fontSize: Math.min(size.height * 0.74, size.width * 0.9), lineHeight: size.height },
-              ]}
-            >
-              {letter.letter}
-            </AppText>
-          ) : (
-            <View pointerEvents="none" style={styles.guideShape}>
-              <ShapeIcon
-                shapeId={shapeId}
-                stroke="#DAD2EE"
-                strokeWidth={5}
-                dashed
-                size={Math.min(size.width, size.height) * 0.82}
-              />
-            </View>
-          )}
-
-          {/* نقاط الإرشاد: تتبع نفس خط الحرف بالترتيب العربي الصحيح */}
-          <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
+          {/*
+            لا نعرض الحرف بخطّ عادي في الخلفية: أي اختلاف بين موضع الخط وموضع
+            النقاط كان يجعل الرسم يبدو منحرفًا. بدلًا من ذلك يُرسم المسار
+            الإرشادي نفسه بخط عريض باهت، فالنقاط تقع دائمًا على الحرف المرئي
+            تمامًا ولا يمكن للرسم أن يخرج عنه.
+          */}
+          <Svg pointerEvents="none" style={StyleSheet.absoluteFill} viewBox={`0 0 ${size.width} ${size.height}`}>
             {(guide?.strokes || []).map((stroke, strokeIndex) =>
               stroke.length > 1 ? (
                 <Polyline
                   key={`guide-${strokeIndex}`}
-                  points={stroke.map((p) => `${toPx(p).x.toFixed(1)},${toPx(p).y.toFixed(1)}`).join(" ")}
-                  stroke="#B9AEE0"
-                  strokeWidth={5}
+                  points={stroke.map((p) => {
+                    const px = toPx(p, box);
+                    return `${px.x.toFixed(1)},${px.y.toFixed(1)}`;
+                  }).join(" ")}
+                  stroke="#EDE7F9"
+                  strokeWidth={brush + 26}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeDasharray="0.1 15"
+                  fill="none"
+                />
+              ) : null
+            )}
+            {(guide?.strokes || []).map((stroke, strokeIndex) =>
+              stroke.length > 1 ? (
+                <Polyline
+                  key={`guide-${strokeIndex}`}
+                  points={stroke.map((p) => {
+                    const px = toPx(p, box);
+                    return `${px.x.toFixed(1)},${px.y.toFixed(1)}`;
+                  }).join(" ")}
+                  stroke="#CFC5EA"
+                  strokeWidth={brush + 10}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              ) : null
+            )}
+            {(guide?.strokes || []).map((stroke, strokeIndex) =>
+              stroke.length > 1 ? (
+                <Polyline
+                  key={`dashes-${strokeIndex}`}
+                  points={stroke.map((p) => {
+                    const px = toPx(p, box);
+                    return `${px.x.toFixed(1)},${px.y.toFixed(1)}`;
+                  }).join(" ")}
+                  stroke="#B9AEE0"
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray="0.1 14"
                   fill="none"
                 />
               ) : null
             )}
           </Svg>
 
-          {/* خطوط الأطفال */}
-          <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
-            {paths.map((item, index) => (
-              <Path
-                key={`path-${index}`}
-                d={item.d}
-                stroke={color}
-                strokeWidth={brush}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            ))}
-            {!!current && (
-              <Path
-                d={current}
-                stroke={color}
-                strokeWidth={brush}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
+          {/* الأجزاء الملوّنة التي أكملها الطفل */}
+          <Svg pointerEvents="none" style={StyleSheet.absoluteFill} viewBox={`0 0 ${size.width} ${size.height}`}>
+            {drawn.map((item, index) =>
+              item.type === "line" ? (
+                <Path
+                  key={`drawn-${index}`}
+                  d={`M ${item.a.x.toFixed(1)} ${item.a.y.toFixed(1)} L ${item.b.x.toFixed(1)} ${item.b.y.toFixed(1)}`}
+                  stroke={item.color}
+                  strokeWidth={item.brush}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              ) : (
+                <Circle
+                  key={`drawn-${index}`}
+                  cx={item.p.x}
+                  cy={item.p.y}
+                  r={item.brush / 2 + 2}
+                  fill={item.color}
+                />
+              )
             )}
           </Svg>
 
-          {/* أجسام النقاط فوق كل شيء؛ النضرة البعدية المستهدفة أكبر */}
-          <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
-            {waypoints.map((point) => {
-              const isUpcoming = point.index === nextWaypointIndex && !doneRef.current;
-              const isHit = point.index < hitIndex;
-              return (
-                <Circle
-                  key={`wp-${point.index}`}
-                  cx={point.x}
-                  cy={point.y}
-                  r={isUpcoming ? 13 : 7.5}
-                  fill={isHit ? "#2FA37B" : isUpcoming ? "#FFF4CE" : "rgba(255,255,255,0.9)"}
-                  stroke={isHit ? "#1F7A56" : isUpcoming ? "#D99000" : "#B9AEE0"}
-                  strokeWidth={isUpcoming ? 3.5 : 2.5}
-                />
-              );
-            })}
-          </Svg>
+          {/*
+            ترتيب العرض مهم: النقاط المكتملة لا تستقبل اللمس، والنقطة التالية
+            تُرسم آخرًا فتكون فوق كل النقاط المتجاورة (وإلا ابتلعت لمسة النقطة
+            التالية لأن مساحات اللمس متقاربة).
+          */}
+          {[
+            ...waypoints.filter((point) => point.index < hitIndex),
+            ...waypoints.filter((point) => point.index > nextIndex && nextIndex >= 0),
+            ...waypoints.filter((point) => point.index === nextIndex),
+          ].map((point) => {
+            const isNext = point.index === nextIndex;
+            const isHit = point.index < hitIndex;
+            const isStart = point.index === 0 && !isHit;
+            return (
+              <Pressable
+                key={`wp-${point.index}`}
+                onPress={() => tapWaypoint(point)}
+                pointerEvents={isHit ? "none" : "auto"}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isHit
+                    ? `نقطة ${point.index + 1} مكتملة`
+                    : isNext
+                      ? `النقطة التالية ${point.index + 1}`
+                      : `نقطة ${point.index + 1}`
+                }
+                style={[
+                  styles.dotTouch,
+                  { left: point.x - 22, top: point.y - 22 },
+                  isNext && styles.dotTouchNext,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.dot,
+                    isHit && styles.dotHit,
+                    isNext && styles.dotNext,
+                    isStart && styles.dotStart,
+                  ]}
+                >
+                  {isStart ? (
+                    <AppText style={styles.dotStartMark}>▶</AppText>
+                  ) : isHit ? (
+                    <AppText style={styles.dotHitMark}>✓</AppText>
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
+
+          {/* شارة البداية والنهاية */}
+          {startPoint && !done && (
+            <View pointerEvents="none" style={[styles.startTag, { left: startPoint.x + 18, top: startPoint.y - 34 }]}>
+              <AppText style={styles.startTagText}>ابدأ هنا</AppText>
+            </View>
+          )}
+          {endPoint && !done && (
+            <View pointerEvents="none" style={[styles.endTag, { left: endPoint.x + 16, top: endPoint.y - 10 }]}>
+              <AppText style={styles.endTagText}>النهاية 🏁</AppText>
+            </View>
+          )}
 
           {done && (
             <View pointerEvents="none" style={styles.doneBadge}>
@@ -388,10 +374,10 @@ export default function TracingGame() {
 
         <View style={styles.progressRow}>
           <AppText style={styles.progressText}>
-            {done ? "الحرف مكتمل بشكله الصحيح" : "أتبع النقاط الملونة بالترتيب ←"}
+            {done ? "أكملت الرسم بشكل صحيح" : "المس النقطة المضيئة بالترتيب"}
           </AppText>
           <AppText style={styles.progressText}>
-            {hitIndex}/{totalWaypoints || 0}
+            {hitIndex}/{total || 0}
           </AppText>
         </View>
         <ProgressBar value={progress} color={color} height={10} />
@@ -419,7 +405,7 @@ export default function TracingGame() {
           ))}
         </View>
 
-        <AppText style={styles.toolsTitle}>🖌️ حجم الفرشاة</AppText>
+        <AppText style={styles.toolsTitle}>🖌️ حجم القلم</AppText>
         <View style={styles.brushRow}>
           {BRUSH_SIZES.map((value) => (
             <Pressable
@@ -531,13 +517,59 @@ const styles = StyleSheet.create({
   },
   guideLetter: {
     position: "absolute",
-    color: "#EFE9F5",
+    color: "#F0EBF8",
     fontWeight: "900",
     textAlign: "center",
     textAlignVertical: "center",
     includeFontPadding: false,
   },
   guideShape: { position: "absolute", alignItems: "center", justifyContent: "center" },
+  dotTouch: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dotTouchNext: { zIndex: 20, elevation: 20 },
+  dot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderWidth: 3,
+    borderColor: "#B9AEE0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dotNext: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#FFF4CE",
+    borderColor: "#D99000",
+    borderWidth: 4,
+  },
+  dotStart: { borderColor: "#2FA37B", borderWidth: 4, backgroundColor: "#E3F8EE" },
+  dotHit: { backgroundColor: "#2FA37B", borderColor: "#1F7A56", width: 26, height: 26, borderRadius: 13 },
+  dotStartMark: { fontSize: 12, color: "#1F7A56", marginLeft: 2 },
+  dotHitMark: { fontSize: 13, color: "#FFFFFF", fontWeight: "900" },
+  startTag: {
+    position: "absolute",
+    backgroundColor: "rgba(47,163,123,0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  startTagText: { fontSize: 11, fontWeight: "900", color: "#1F7A56" },
+  endTag: {
+    position: "absolute",
+    backgroundColor: "rgba(108,92,231,0.12)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  endTagText: { fontSize: 11, fontWeight: "900", color: PALETTE.primaryDark },
   doneBadge: {
     position: "absolute",
     right: 10,

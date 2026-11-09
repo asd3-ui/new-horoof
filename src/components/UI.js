@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ROW, APP_FONT, PALETTE, SHADOW, SHADOW_SOFT, useResponsive  } from "../theme";
-import { splitForHighlight, highlightPieces, restAfterFirstLetter } from "../text";
+import { restAfterFirstLetter } from "../text";
 
 /** نص موحّد يمنع تكبير الخط المفرط الذي يكسر التصميم */
 export function AppText({ style, children, ...rest }) {
@@ -408,25 +408,6 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: "900", color: PALETTE.ink, marginTop: 8, textAlign: "center" },
   emptyText: { fontSize: 12, color: PALETTE.inkSoft, marginTop: 6, textAlign: "center", lineHeight: 18 },
 });
-
-/**
- * يعرض كلمة عربية واحدة متصلة (غير مفككة) مع تلوين حرف معيّن داخلها بالأحمر.
- * يعتمد على لاصقات الاتصال (ZWJ) في حدود التقسيم للحفاظ على تشكيل الحروف،
- * لأن تقسيم نص عربي إلى عدة مكوّنات <Text> يفكك التشكيل على أندرويد.
- */
-export function RedLetterWord({ word, letter, letterTextIndex, style, redStyle }) {
-  const info = splitForHighlight(word, letter, letterTextIndex);
-  if (!info) return <AppText style={style}>{word}</AppText>;
-  const pieces = highlightPieces(info);
-
-  return (
-    <AppText style={style}>
-      {pieces.before && <AppText style={style}>{pieces.before}</AppText>}
-      <AppText style={[style, redStyle]}>{pieces.red}</AppText>
-      {pieces.after && <AppText style={style}>{pieces.after}</AppText>}
-    </AppText>
-  );
-}
 
 /**
  * صف الحرف الأول المفقود: مربع «؟» يقع على يمين الكلمة (بدايتها في العربية)
