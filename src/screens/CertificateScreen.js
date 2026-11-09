@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { getLevelInfo, unlockedBadges } from "../data/rewards";
 import { formatDateArabic } from "../utils";
-import { PALETTE, SHADOW, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW, useResponsive  } from "../theme";
 import { AppText, Card, Page, PrimaryButton, ScreenHeader } from "../components/UI";
 
 export default function CertificateScreen() {
@@ -147,12 +147,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     maxWidth: 400,
   },
-  statsRow: { flexDirection: "row-reverse", gap: 8, marginTop: 16, width: "100%" },
+  statsRow: { flexDirection: ROW, gap: 8, marginTop: 16, width: "100%" },
   stat: { flex: 1, alignItems: "center", backgroundColor: "#FFF7DB", borderRadius: 14, paddingVertical: 8 },
   statValue: { fontSize: 14, fontWeight: "900", color: "#7A5B00" },
   statLabel: { fontSize: 9, color: "#9A8447", marginTop: 2 },
   footerRow: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
-import { PALETTE, SHADOW } from "../theme";
+import { ROW, PALETTE, SHADOW  } from "../theme";
 
 /** شريط إنجاز يظهر أعلى الشاشة ثم يختفي */
 export default function Toast({ toast }) {
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     gap: 10,
     backgroundColor: "#FFFFFF",

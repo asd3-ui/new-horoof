@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { BADGES, STICKERS, getLevelInfo, unlockedStickers } from "../data/rewards";
-import { PALETTE, SHADOW_SOFT, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW_SOFT, useResponsive  } from "../theme";
 import {
   AppText,
   Card,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   levelName: { fontSize: 22, fontWeight: "900", color: PALETTE.ink, marginTop: 4 },
   levelLevel: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft, marginTop: 2, marginBottom: 10 },
   levelHint: { fontSize: 11, fontWeight: "700", color: PALETTE.inkSoft, marginTop: 8, textAlign: "center" },
-  badgesGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 9 },
+  badgesGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 9 },
   badgeCard: {
     backgroundColor: "#FFF8DC",
     borderRadius: 18,
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   badgeIcon: { fontSize: 30 },
   badgeTitle: { fontSize: 11, fontWeight: "900", color: PALETTE.ink, textAlign: "center", marginTop: 4 },
   badgeHint: { fontSize: 8, color: PALETTE.inkMuted, textAlign: "center", marginTop: 3, lineHeight: 12 },
-  stickersGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 9 },
+  stickersGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 9 },
   sticker: {
     width: "22%",
     minWidth: 66,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   stickerEmoji: { fontSize: 28 },
   stickerLockedEmoji: { opacity: 0.35 },
   stickerName: { fontSize: 9, fontWeight: "800", color: PALETTE.inkSoft, marginTop: 3, textAlign: "center" },
-  tipCard: { flexDirection: "row-reverse", alignItems: "center", gap: 10, marginTop: 20, backgroundColor: "#FFF4CE" },
+  tipCard: { flexDirection: ROW, alignItems: "center", gap: 10, marginTop: 20, backgroundColor: "#FFF4CE" },
   tipEmoji: { fontSize: 24 },
   tipText: { flex: 1, fontSize: 12, color: "#7A5B00", textAlign: "right", lineHeight: 18, fontWeight: "700" },
 });

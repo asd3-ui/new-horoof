@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { speakText, playSfx, buzz } from "../audio";
 import { BUILD_WORDS } from "../data/games";
-import { PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive  } from "../theme";
 import { shuffled } from "../utils";
 import {
   AppText,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   speakerText: { fontSize: 12, fontWeight: "800", color: PALETTE.primaryDark },
   pressed: { opacity: 0.75 },
-  slots: { flexDirection: "row-reverse", justifyContent: "center", flexWrap: "wrap", gap: 8, marginTop: 18 },
+  slots: { flexDirection: ROW, justifyContent: "center", flexWrap: "wrap", gap: 8, marginTop: 18 },
   slot: {
     width: 54,
     height: 62,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   slotFilled: { backgroundColor: "#E4F8E9", borderColor: "#2FA37B", borderStyle: "solid" },
   slotFlash: { backgroundColor: "#FFF4CE", borderColor: "#D99000" },
   slotText: { fontSize: 30, fontWeight: "900", color: PALETTE.ink },
-  tiles: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", marginTop: 20 },
+  tiles: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", marginTop: 20 },
   tile: {
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   tilePressed: { transform: [{ scale: 0.94 }] },
   tileText: { fontSize: 30, fontWeight: "900", color: PALETTE.ink },
   successText: { textAlign: "center", color: "#1F7A56", fontWeight: "900", fontSize: 16, marginTop: 14 },
-  actions: { flexDirection: "row-reverse", gap: 10, marginTop: 6 },
+  actions: { flexDirection: ROW, gap: 10, marginTop: 6 },
   flexButton: { flex: 1 },
   doneCard: { alignItems: "center", marginTop: 18 },
   doneEmoji: { fontSize: 70 },

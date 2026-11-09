@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useApp } from "../context";
 import { CHARACTERS, getCharacterById } from "../data/games";
-import { AVATAR_COLORS, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive } from "../theme";
+import { ROW, AVATAR_COLORS, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive  } from "../theme";
 import { todayKey } from "../utils";
 import { AppText, Card, GhostButton, Page, PrimaryButton } from "../components/UI";
 
@@ -153,11 +153,11 @@ const styles = StyleSheet.create({
     borderColor: "#E7DFFF",
     textAlign: "right",
   },
-  colorRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 9, marginTop: 2 },
+  colorRow: { flexDirection: ROW, flexWrap: "wrap", gap: 9, marginTop: 2 },
   colorDot: { width: 38, height: 38, borderRadius: 13, borderWidth: 3, borderColor: "transparent" },
   colorDotActive: { borderColor: PALETTE.ink, transform: [{ scale: 1.08 }] },
   sectionTitle: { fontSize: 19, fontWeight: "900", color: PALETTE.ink, textAlign: "center", marginTop: 20, marginBottom: 10 },
-  characterGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 10 },
+  characterGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 10 },
   characterCard: {
     backgroundColor: "rgba(255,255,255,0.85)",
     borderRadius: 20,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   characterDesc: { fontSize: 10, color: PALETTE.inkSoft, textAlign: "center", marginTop: 4, lineHeight: 14 },
   selectedMark: { fontSize: 10, fontWeight: "900", color: PALETTE.primary, marginTop: 4 },
   pressed: { opacity: 0.8 },
-  previewCard: { marginTop: 16, flexDirection: "row-reverse", alignItems: "center", gap: 12 },
+  previewCard: { marginTop: 16, flexDirection: ROW, alignItems: "center", gap: 12 },
   previewAvatar: { width: 60, height: 60, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   previewEmoji: { fontSize: 32 },
   previewText: { flex: 1 },

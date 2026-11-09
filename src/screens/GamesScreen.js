@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { ACTIVITIES, ACTIVITY_CATEGORIES } from "../data/activities";
 import { getCharacterById } from "../data/games";
-import { PALETTE, gridItemWidth, useResponsive } from "../theme";
+import { ROW, PALETTE, gridItemWidth, useResponsive  } from "../theme";
 import {
   ActivityCard,
   AppText,
@@ -73,6 +73,6 @@ export default function GamesScreen() {
 
 const styles = StyleSheet.create({
   categoryText: { fontSize: 11, color: PALETTE.inkMuted, textAlign: "right", marginTop: -6, marginBottom: 10 },
-  grid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 10 },
+  grid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 10 },
   footer: { fontSize: 11, color: PALETTE.inkMuted, textAlign: "center", marginTop: 22, lineHeight: 17 },
 });

@@ -1,4 +1,21 @@
-import { Platform, StatusBar, useWindowDimensions } from "react-native";
+import { I18nManager, Platform, StatusBar, useWindowDimensions } from "react-native";
+
+/**
+ * اتجاه الصفوف الصحيح في كل الأحوال.
+ *
+ * على أجهزة أندرويد العربية يفعّل React Native الانعكاس التلقائي (isRTL = true)،
+ * فتصبح "row" تُرسم من اليمين إلى اليسار ويقع العنصر الأول في اليمين،
+ * فيما تُقلب "row-reverse" مرتين وتُرسم من اليسار (وهذا كان سبب ظهور
+ * مربعات بناء الكلمات والحرف المفقود في الاتجاه الخاطئ).
+ *
+ * القاعدة هنا: نريد دائمًا أن يكون العنصر الأول في اليمين.
+ * - إذا كان الانعكاس التلقائي فعّالًا (isRTL) نستخدم "row" ليُعكس مرة واحدة.
+ * - وإلا نستخدم "row-reverse" ليعمل الانعكاس يدويًا.
+ */
+export const ROW = I18nManager.isRTL ? "row" : "row-reverse";
+
+/** عائلة الخط العربي الملحم بعد تحميلها من App (اختياري، يعمل الخط الافتراضي إن فشل) */
+export const APP_FONT = { family: null };
 
 /**
  * لوحة الألوان الموحّدة للتطبيق.

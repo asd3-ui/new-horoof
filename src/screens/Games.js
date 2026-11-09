@@ -1,8 +1,8 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
-import { PALETTE, SHADOW_SOFT } from "../theme";
-import { AppText } from "../components/UI";
+import { PALETTE, ROW, SHADOW_SOFT  } from "../theme";
+import { AppText, MissingSlotWord, RedLetterWord } from "../components/UI";
 import ShapeIcon from "../components/ShapeIcon";
 import QuizGame from "./QuizGame";
 import {
@@ -71,12 +71,12 @@ function MissingPrompt({ round, helpers }) {
   return (
     <View style={styles.promptCenter}>
       <AppText style={styles.bigEmoji}>{word?.emoji}</AppText>
-      <View style={styles.missingRow}>
-        <View style={styles.missingSlot}>
-          <AppText style={styles.missingSlotText}>؟</AppText>
-        </View>
-        <AppText style={styles.missingRest}>{word?.word?.slice(1)}</AppText>
-      </View>
+      {/* مربع الحرف المفقود في بداية الكلمة (أقصى اليمين) */}
+      <MissingSlotWord
+        word={word?.word}
+        rowStyle={styles.missingRow}
+        restStyle={styles.missingRest}
+      />
       <AppText style={styles.promptHint}>ما الحرف الأول في هذه الكلمة؟</AppText>
       <ReplayButton text={`كلمة ${word?.word}`} label="استمع إلى الكلمة" />
     </View>
@@ -97,18 +97,17 @@ function SoundPrompt({ round, helpers }) {
 function PositionPrompt({ round, helpers }) {
   const target = round.meta?.target;
   if (!target) return null;
-  const index = target.word.indexOf(target.letter);
-  const before = index >= 0 ? target.word.slice(0, index) : "";
-  const after = index >= 0 ? target.word.slice(index + 1) : target.word;
 
   return (
     <View style={styles.promptCenter}>
       <AppText style={styles.bigEmoji}>{target.emoji}</AppText>
-      <AppText style={styles.positionWord}>
-        {before}
-        <AppText style={styles.positionLetter}>{target.letter}</AppText>
-        {after}
-      </AppText>
+      {/* كلمة واحدة متصلة مع الحرف المقصود بالأحمر */}
+      <RedLetterWord
+        word={target.word}
+        letter={target.letter}
+        style={styles.positionWord}
+        redStyle={styles.positionLetter}
+      />
       <AppText style={styles.promptHint}>أين يقع الحرف الملوّن؟</AppText>
       <ReplayButton text={`أين يقع حرف ${target.letter} في كلمة ${target.word}؟`} label="استمع إلى السؤال" />
     </View>
@@ -146,10 +145,13 @@ function CountingPrompt({ round, helpers }) {
 
 function ShapePrompt({ round, helpers }) {
   const { shape, color, mode } = round.meta || {};
+  // في السؤال عن الاسم يظهر الشكل بلون ثابت وواضح، وفي السؤال عن اللون يظهر باللون المطلوب.
+  const fill = mode === "color" ? color?.hex || "#7C6FD8" : "#7C6FD8";
   return (
     <View style={styles.promptCenter}>
+      {/* الشكل يظهر دائمًا داخل بطاقة بيضاء حتى لو تغيّرت البيانات */}
       <View style={styles.shapeWrap}>
-        <ShapeIcon shapeId={shape?.id} color={color?.hex} size={132} />
+        <ShapeIcon shapeId={shape?.id || "circle"} color={fill} size={132} />
       </View>
       <AppText style={styles.promptHint}>
         {mode === "color" ? "ما لون هذا الشكل؟" : "ما اسم هذا الشكل؟"}
@@ -193,25 +195,20 @@ function TextChoice({ choice, emoji }) {
   );
 }
 
+/* خيارات نصية فقط — لا شكل ولا مربع لون داخل الخيارات */
 function ShapeNameChoice({ choice }) {
   return (
-    <View style={styles.textChoiceInner}>
-      <ShapeIcon shapeId={choice.shapeId} color={PALETTE.primary} size={36} />
-      <AppText style={styles.textChoiceLabel} numberOfLines={1}>
-        {choice.label}
-      </AppText>
-    </View>
+    <AppText style={styles.textChoiceLabel} numberOfLines={1} adjustsFontSizeToFit>
+      {choice.label}
+    </AppText>
   );
 }
 
 function ColorNameChoice({ choice }) {
   return (
-    <View style={styles.textChoiceInner}>
-      <View style={[styles.colorSwatch, { backgroundColor: choice.colorHex }]} />
-      <AppText style={styles.textChoiceLabel} numberOfLines={1}>
-        {choice.label}
-      </AppText>
-    </View>
+    <AppText style={styles.textChoiceLabel} numberOfLines={1} adjustsFontSizeToFit>
+      {choice.label}
+    </AppText>
   );
 }
 
@@ -447,7 +444,7 @@ const styles = StyleSheet.create({
   bigLetter: { fontSize: 110, lineHeight: 126, fontWeight: "900", color: PALETTE.primary },
   bigEmoji: { fontSize: 84, lineHeight: 98 },
   replay: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     backgroundColor: "#F2EEFF",
     paddingVertical: 8,
@@ -458,25 +455,13 @@ const styles = StyleSheet.create({
   },
   replayIcon: { fontSize: 17 },
   replayText: { fontSize: 12, fontWeight: "800", color: PALETTE.primaryDark },
-  missingRow: { flexDirection: "row-reverse", alignItems: "center", marginTop: 6, gap: 4 },
-  missingSlot: {
-    width: 62,
-    height: 72,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderStyle: "dashed",
-    borderColor: "#C9BEF0",
-    backgroundColor: "#F7F3FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  missingSlotText: { fontSize: 38, fontWeight: "900", color: "#A79BD6" },
+  missingRow: { flexDirection: ROW, alignItems: "center", marginTop: 6, gap: 6 },
   missingRest: { fontSize: 52, fontWeight: "900", color: PALETTE.ink },
-  positionWord: { fontSize: 46, fontWeight: "900", color: PALETTE.ink, marginTop: 6 },
+  positionWord: { fontSize: 46, fontWeight: "900", color: PALETTE.ink, marginTop: 6, textAlign: "center" },
   positionLetter: { color: PALETTE.coral, textDecorationLine: "underline" },
   oppositeWord: { fontSize: 40, fontWeight: "900", color: PALETTE.ink, marginTop: 4 },
   countGrid: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
@@ -491,10 +476,9 @@ const styles = StyleSheet.create({
   wordChoiceEmoji: { fontSize: 34 },
   wordChoiceLabel: { fontSize: 17, fontWeight: "900", color: PALETTE.ink, marginTop: 4, textAlign: "center" },
   numberChoice: { fontSize: 44, fontWeight: "900", color: PALETTE.ink },
-  textChoiceInner: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, width: "100%" },
+  textChoiceInner: { flexDirection: ROW, alignItems: "center", justifyContent: "center", gap: 8, width: "100%" },
   textChoiceEmoji: { fontSize: 18 },
   textChoiceLabel: { fontSize: 17, fontWeight: "900", color: PALETTE.ink, textAlign: "center", flexShrink: 1 },
-  colorSwatch: { width: 30, height: 30, borderRadius: 10, borderWidth: 2, borderColor: "rgba(0,0,0,0.08)" },
   trackWrap: { marginTop: 12 },
   track: {
     height: 74,

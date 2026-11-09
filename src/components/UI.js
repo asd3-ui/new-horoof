@@ -8,12 +8,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PALETTE, SHADOW, SHADOW_SOFT, useResponsive } from "../theme";
+import { ROW, APP_FONT, PALETTE, SHADOW, SHADOW_SOFT, useResponsive  } from "../theme";
+import { splitForHighlight, highlightPieces, restAfterFirstLetter } from "../text";
 
 /** نص موحّد يمنع تكبير الخط المفرط الذي يكسر التصميم */
 export function AppText({ style, children, ...rest }) {
+  const family = Array.isArray(style)
+    ? style.find((item) => item?.fontFamily)?.fontFamily || APP_FONT.family
+    : style?.fontFamily || APP_FONT.family;
   return (
-    <Text maxFontSizeMultiplier={1.35} style={style} {...rest}>
+    <Text maxFontSizeMultiplier={1.35} style={[family ? { fontFamily: family } : null, style]} {...rest}>
       {children}
     </Text>
   );
@@ -278,7 +282,7 @@ export function EmptyState({ emoji = "🌱", title, text }) {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     paddingVertical: 8,
     gap: 10,
@@ -298,7 +302,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: "900", color: PALETTE.ink, textAlign: "right" },
   headerSubtitle: { fontSize: 12, color: PALETTE.inkSoft, textAlign: "right", marginTop: 2 },
   sectionRow: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 22,
@@ -358,7 +362,7 @@ const styles = StyleSheet.create({
   statEmoji: { fontSize: 18, marginBottom: 2 },
   statValue: { fontSize: 22, fontWeight: "900", color: PALETTE.ink },
   statLabel: { fontSize: 11, color: PALETTE.inkSoft, marginTop: 2, textAlign: "center" },
-  mascotRow: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 10, marginTop: 14 },
+  mascotRow: { flexDirection: ROW, alignItems: "flex-start", gap: 10, marginTop: 14 },
   mascotFace: {
     width: 58,
     height: 58,
@@ -403,4 +407,55 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { fontSize: 16, fontWeight: "900", color: PALETTE.ink, marginTop: 8, textAlign: "center" },
   emptyText: { fontSize: 12, color: PALETTE.inkSoft, marginTop: 6, textAlign: "center", lineHeight: 18 },
+});
+
+/**
+ * يعرض كلمة عربية واحدة متصلة (غير مفككة) مع تلوين حرف معيّن داخلها بالأحمر.
+ * يعتمد على لاصقات الاتصال (ZWJ) في حدود التقسيم للحفاظ على تشكيل الحروف،
+ * لأن تقسيم نص عربي إلى عدة مكوّنات <Text> يفكك التشكيل على أندرويد.
+ */
+export function RedLetterWord({ word, letter, letterTextIndex, style, redStyle }) {
+  const info = splitForHighlight(word, letter, letterTextIndex);
+  if (!info) return <AppText style={style}>{word}</AppText>;
+  const pieces = highlightPieces(info);
+
+  return (
+    <AppText style={style}>
+      {pieces.before && <AppText style={style}>{pieces.before}</AppText>}
+      <AppText style={[style, redStyle]}>{pieces.red}</AppText>
+      {pieces.after && <AppText style={style}>{pieces.after}</AppText>}
+    </AppText>
+  );
+}
+
+/**
+ * صف الحرف الأول المفقود: مربع «؟» يقع على يمين الكلمة (بدايتها في العربية)
+ * ثم بقية الكلمة متصلة بشكل صحيح. الاستخدام: <MissingSlotWord word="تمساح" … />
+ */
+export function MissingSlotWord({ word, slotText = "؟", slotStyle, slotBoxStyle, restStyle, rowStyle }) {
+  if (!word) return null;
+  return (
+    <View style={[ROW, rowStyle]}>
+      <View style={[missingSlotStyles.box, slotBoxStyle]}>
+        <AppText style={[missingSlotStyles.boxText, slotStyle]}>{slotText}</AppText>
+      </View>
+      <AppText style={restStyle}>{restAfterFirstLetter(word)}</AppText>
+    </View>
+  );
+}
+
+const missingSlotStyles = StyleSheet.create({
+  row: { flexDirection: ROW, alignItems: "center", gap: 6 },
+  box: {
+    width: 62,
+    height: 72,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderStyle: "dashed",
+    borderColor: "#C9BEF0",
+    backgroundColor: "#F7F3FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  boxText: { fontSize: 38, fontWeight: "900", color: "#A79BD6" },
 });

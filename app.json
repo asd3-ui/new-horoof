@@ -2,7 +2,7 @@
   "expo": {
     "name": "حروفي المرحة",
     "slug": "haroofi-al-marah",
-    "version": "2.0.2",
+    "version": "2.1.0",
     "description": "لعبة عربية تفاعلية للأطفال لتعلّم الحروف والكلمات والأرقام والأشكال",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -11,7 +11,9 @@
     "backgroundColor": "#FFF8F0",
     "primaryColor": "#6C5CE7",
     "icon": "./assets/images/icon.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#FFF8F0"
@@ -26,7 +28,7 @@
     },
     "android": {
       "package": "com.asd3ui.haroofialmarah",
-      "versionCode": 4,
+      "versionCode": 5,
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
@@ -35,7 +37,12 @@
       }
     },
     "extra": {
-      "supportedLocales": ["ar"]
-    }
+      "supportedLocales": [
+        "ar"
+      ]
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

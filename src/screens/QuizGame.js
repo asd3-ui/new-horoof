@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
-import { speakText, playSfx, buzz } from "../audio";
-import { PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive } from "../theme";
+import { speakText, playSfx, buzz, speakSequence } from "../audio";
+import { ROW, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive  } from "../theme";
 import {
   AppText,
   Card,
@@ -41,12 +41,14 @@ function ChoiceButton({ choice, width, state, onPress, children }) {
         accessibilityLabel={choice.label}
         style={({ pressed }) => [
           styles.choice,
+          state.isSpeaking && styles.choiceSpeaking,
           state.isCorrect && styles.choiceCorrect,
           state.isWrong && styles.choiceWrong,
           pressed && !state.disabled && styles.choicePressed,
         ]}
       >
         {children}
+        {state.isSpeaking && <AppText style={styles.choiceSpeakingMark}>🔊</AppText>}
         {state.isCorrect && <AppText style={styles.choiceMark}>✓</AppText>}
         {state.isWrong && <AppText style={styles.choiceMarkWrong}>✕</AppText>}
       </Pressable>
@@ -90,12 +92,56 @@ export default function QuizGame({
   const advancingRef = useRef(false);
   const advanceTimer = useRef(null);
   const wrongTimer = useRef(null);
+  const readAllRef = useRef(null);
+  const [speakingKey, setSpeakingKey] = useState(null);
 
   const clearTimers = useCallback(() => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     if (wrongTimer.current) clearTimeout(wrongTimer.current);
     advanceTimer.current = null;
     wrongTimer.current = null;
+  }, []);
+
+  const cancelReading = useCallback(() => {
+    if (readAllRef.current) {
+      readAllRef.current();
+      readAllRef.current = null;
+    }
+    setSpeakingKey(null);
+  }, []);
+
+  /** إيقاف القراءة عند مغادرة الشاشة */
+  useEffect(() => cancelReading, [cancelReading]);
+
+  /** القارئ الكامل: يقرأ السؤال ثم كل خيار بالتدريج مع تظليل الخيار أثناء نطقه */
+  const speakRound = useCallback(() => {
+    if (doneRef.current) return;
+    cancelReading();
+    const promptText = (promptSpeech ? promptSpeech(round) : round?.speech) || round?.prompt;
+    const items = [];
+    if (promptText) items.push({ key: "prompt", text: promptText });
+    (round?.choices || []).forEach((choice) => {
+      if (choice.speech || choice.label) {
+        items.push({ key: choice.key, text: choice.speech || choice.label });
+      }
+    });
+    if (!items.length) return;
+    readAllRef.current = speakSequence(items, {
+      startDelayMs: 380,
+      gapMs: 640,
+      onStartItem: (item) => setSpeakingKey(item.key),
+      onDone: () => setSpeakingKey(null),
+    });
+  }, [cancelReading, promptSpeech, round]);
+
+  // إلغاء القراءة عند مغادرة الشاشة (مرة أخيرة كحماية مزدوجة)
+  useEffect(() => {
+    return () => {
+      if (readAllRef.current) {
+        readAllRef.current();
+        readAllRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => clearTimers, [clearTimers]);
@@ -110,13 +156,16 @@ export default function QuizGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // نطق السؤال تلقائيًا
+  // قراءة السؤال ثم الخيارات تلقائيًا عند ظهور كل جولة
   useEffect(() => {
     if (doneRef.current) return undefined;
-    const text = promptSpeech ? promptSpeech(round) : round?.speech;
-    if (!text) return undefined;
-    const timer = setTimeout(() => speakText(text), 320);
-    return () => clearTimeout(timer);
+    speakRound();
+    return () => {
+      if (readAllRef.current) {
+        readAllRef.current();
+        readAllRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round?.key]);
 
@@ -124,6 +173,7 @@ export default function QuizGame({
     if (doneRef.current) return;
     doneRef.current = true;
     clearTimers();
+    cancelReading();
 
     const score = correctRef.current;
     let stars = 0;
@@ -143,7 +193,7 @@ export default function QuizGame({
       confetti: true,
     });
     if (stars >= 2) speakText("أحسنت! لقد أكملت اللعبة بنجاح.");
-  }, [activityId, addStars, celebrate, clearTimers, recordActivity, timeLimit, totalRounds]);
+  }, [activityId, addStars, celebrate, clearTimers, cancelReading, recordActivity, timeLimit, totalRounds]);
 
   // مؤقت التحدي السريع
   useEffect(() => {
@@ -177,6 +227,8 @@ export default function QuizGame({
 
   const choose = (choice) => {
     if (done || solvedRef.current) return;
+    // يتوقف القارئ فورًا عند لمس الخيار
+    cancelReading();
 
     if (choice.key === round.correctKey) {
       solvedRef.current = true;
@@ -207,6 +259,7 @@ export default function QuizGame({
 
   const restart = () => {
     clearTimers();
+    cancelReading();
     doneRef.current = false;
     correctRef.current = 0;
     solvedRef.current = false;
@@ -313,9 +366,14 @@ export default function QuizGame({
 
       {renderTop ? renderTop(round, index) : null}
 
-      <Card style={styles.promptCard}>
+      <Card
+        style={[
+          styles.promptCard,
+          speakingKey === "prompt" && styles.promptCardSpeaking,
+        ]}
+      >
         {renderPrompt ? (
-          renderPrompt(round, { speak: () => speakText(promptSpeech ? promptSpeech(round) : round.speech) })
+          renderPrompt(round, { speak: speakRound })
         ) : (
           <View style={styles.defaultPrompt}>
             {round.meta?.letter ? (
@@ -333,6 +391,7 @@ export default function QuizGame({
           const state = {
             isCorrect: solvedKey === choice.key,
             isWrong: wrongKey === choice.key,
+            isSpeaking: speakingKey === choice.key,
             disabled: !!solvedKey,
           };
           return (
@@ -382,14 +441,15 @@ const styles = StyleSheet.create({
     borderColor: "#F0D787",
   },
   scoreText: { fontSize: 13, fontWeight: "900", color: PALETTE.ink },
-  progressRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
+  progressRow: { flexDirection: ROW, justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
   progressLabel: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
   promptCard: { marginTop: 14, alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)" },
+  promptCardSpeaking: { borderColor: "#ECB64F", borderWidth: 2, backgroundColor: "#FFFDF3" },
   defaultPrompt: { alignItems: "center" },
   defaultLetter: { fontSize: 96, fontWeight: "900", color: PALETTE.primary, lineHeight: 112 },
   defaultEmoji: { fontSize: 78, lineHeight: 92 },
   promptText: { fontSize: 14, fontWeight: "800", color: PALETTE.inkSoft, textAlign: "center", marginTop: 6 },
-  choices: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", marginTop: 16 },
+  choices: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", marginTop: 16 },
   choice: {
     minHeight: 86,
     borderRadius: 20,
@@ -404,6 +464,8 @@ const styles = StyleSheet.create({
   },
   choiceCorrect: { backgroundColor: "#DFF7E8", borderColor: "#2FA37B" },
   choiceWrong: { backgroundColor: "#FFE7E2", borderColor: "#E8604C" },
+  choiceSpeaking: { backgroundColor: "#FFF6D8", borderColor: "#ECB64F", borderWidth: 3 },
+  choiceSpeakingMark: { position: "absolute", top: 6, right: 8, fontSize: 13 },
   choicePressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
   choiceLetter: { fontSize: 34, fontWeight: "900", color: PALETTE.ink, textAlign: "center" },
   choiceMark: {
@@ -434,7 +496,7 @@ const styles = StyleSheet.create({
   resultStar: { fontSize: 38 },
   starOn: { opacity: 1 },
   starOff: { opacity: 0.22 },
-  resultStats: { flexDirection: "row-reverse", gap: 8, marginTop: 16, marginBottom: 8, width: "100%" },
+  resultStats: { flexDirection: ROW, gap: 8, marginTop: 16, marginBottom: 8, width: "100%" },
   resultStat: { flex: 1, alignItems: "center", backgroundColor: "#F7F3FF", borderRadius: 16, paddingVertical: 10 },
   resultStatValue: { fontSize: 22, fontWeight: "900", color: PALETTE.ink },
   resultStatLabel: { fontSize: 10, color: PALETTE.inkSoft, marginTop: 2, textAlign: "center" },

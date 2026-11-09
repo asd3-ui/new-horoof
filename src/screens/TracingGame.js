@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, StyleSheet, View } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, Path, Polyline } from "react-native-svg";
 import { useApp } from "../context";
 import { speakText, playSfx, buzz } from "../audio";
 import { LETTERS, getLetterById } from "../data/letters";
 import { SHAPES } from "../data/games";
-import { BRUSH_COLORS, PALETTE, SHADOW_SOFT, clamp, useResponsive } from "../theme";
+import { getLetterGuide, getShapeGuide } from "../data/trace";
+import { BRUSH_COLORS, PALETTE, ROW, SHADOW_SOFT, clamp, useResponsive } from "../theme";
 import {
   AppText,
   Card,
@@ -19,6 +20,14 @@ import ShapeIcon from "../components/ShapeIcon";
 
 const BRUSH_SIZES = [8, 14, 22];
 
+/**
+ * لعبة «لوّن واكتب» المعدّلة.
+ *
+ * التلوين الصحيح لن يعتمد بعد الآن على طول الخط المسحوب — بل على ملامس نقاط
+ * خط الحرف نفسه بالترتيب الصحيح (اتجاه الكتابة العربي: من اليمين إلى اليسار،
+ * ومن الأعلى إلى الأسفل). الرسم في الفراغ المحيط لا يزيد التقدم، ولا تظهر
+ * علامة «تم» إلا بعد اكتمال الحرف بشكله الصحيح.
+ */
 export default function TracingGame() {
   const { params, navigate, addStars, recordActivity, celebrate } = useApp();
   const { height } = useResponsive();
@@ -41,7 +50,8 @@ export default function TracingGame() {
   const currentRef = useRef("");
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
-  const totalLengthRef = useRef(0);
+  const [hitIndex, setHitIndex] = useState(0);
+  const hitIndexRef = useRef(0);
   const [done, setDone] = useState(false);
   const doneRef = useRef(false);
   const [color, setColor] = useState(BRUSH_COLORS[0]);
@@ -49,17 +59,67 @@ export default function TracingGame() {
 
   const completeRef = useRef(() => {});
 
+  /* ------------------------------ المسار الإرشادي ------------------------------ */
+  const guide = useMemo(
+    () => (mode === "shape" ? getShapeGuide(shape?.id) : getLetterGuide(letter?.letter)),
+    [mode, shape?.id, letter?.letter]
+  );
+
+  /** تحويل نقاط الشبكة 0..100 إلى بكسل الشاشة */
+  const toPx = useCallback(
+    (point) => {
+      const { width, height: canvasHeight } = sizeRef.current;
+      const box = Math.min(width, canvasHeight) * 0.86;
+      return {
+        x: width / 2 + ((point[0] - 50) / 100) * box,
+        y: canvasHeight / 2 + ((point[1] - 50) / 100) * box,
+      };
+    },
+    []
+  );
+
+  const waypoints = useMemo(() => {
+    if (!guide) return [];
+    const result = [];
+    guide.strokes.forEach((stroke, strokeIndex) => {
+      stroke.forEach((point, pointIndex) => {
+        const pixel = toPx(point);
+        result.push({ ...pixel, strokeIndex, isDot: stroke.length === 1, index: result.length });
+      });
+    });
+    return result;
+    // يعاد الحساب عند تغيّر الحجم أو المسار
+  }, [guide, toPx, size.width, size.height]);
+
+  const waypointsRef = useRef(waypoints);
+  waypointsRef.current = waypoints;
+  const totalWaypoints = waypoints.length;
+  const totalWaypointsRef = useRef(totalWaypoints);
+  totalWaypointsRef.current = totalWaypoints;
+  const tolerance = Math.max(20, Math.min(size.width, size.height) * 0.13);
+  const toleranceRef = useRef(tolerance);
+  toleranceRef.current = tolerance;
+
+  /* ------------------------------ مفاتيح الحالة ------------------------------ */
+
+  const updateProgress = useCallback((newHit) => {
+    const total = totalWaypointsRef.current || 1;
+    const value = Math.min(100, (newHit / total) * 100);
+    progressRef.current = value;
+    setProgress(value);
+  }, []);
+
   const reset = useCallback(() => {
     pathsRef.current = [];
     setPaths([]);
     currentRef.current = "";
     setCurrent("");
-    progressRef.current = 0;
-    setProgress(0);
-    totalLengthRef.current = 0;
+    hitIndexRef.current = 0;
+    setHitIndex(0);
+    updateProgress(0);
     doneRef.current = false;
     setDone(false);
-  }, []);
+  }, [updateProgress]);
 
   const complete = () => {
     if (doneRef.current) return;
@@ -81,10 +141,35 @@ export default function TracingGame() {
   };
   completeRef.current = complete;
 
+  /** فحص اللمسة: هل قرّبت من النقطة التالية بالترتيب؟ */
+  const tryHit = useCallback(
+    (x, y) => {
+      if (doneRef.current) return false;
+      const nextIndex = hitIndexRef.current;
+      const list = waypointsRef.current;
+      if (!list.length || nextIndex >= list.length) return false;
+      const target = list[nextIndex];
+      const distance = Math.hypot(x - target.x, y - target.y);
+      if (distance > toleranceRef.current) return false;
+
+      const nextIndex2 = nextIndex + 1;
+      hitIndexRef.current = nextIndex2;
+      setHitIndex(nextIndex2);
+      updateProgress(nextIndex2);
+      playSfx("pop");
+      buzz(8);
+      if (nextIndex2 >= list.length) {
+        completeRef.current();
+      }
+      return true;
+    },
+    [updateProgress]
+  );
+
   const panResponder = useMemo(() => {
     const finishStroke = () => {
       if (currentRef.current) {
-        pathsRef.current = [...pathsRef.current, currentRef.current];
+        pathsRef.current = [...pathsRef.current, { d: currentRef.current, hitIndex: hitIndexRef.current }];
         setPaths(pathsRef.current);
       }
       currentRef.current = "";
@@ -104,6 +189,7 @@ export default function TracingGame() {
       onPanResponderGrant: (event) => {
         if (doneRef.current) return;
         const { x, y } = point(event);
+        tryHit(x, y);
         const next = `M ${x.toFixed(1)} ${y.toFixed(1)}`;
         currentRef.current = next;
         setCurrent(next);
@@ -111,26 +197,19 @@ export default function TracingGame() {
       onPanResponderMove: (event) => {
         if (doneRef.current) return;
         const { x, y } = point(event);
+        tryHit(x, y);
         const parts = currentRef.current.split(" ");
         const lastX = Number(parts[parts.length - 2] || 0);
         const lastY = Number(parts[parts.length - 1] || 0);
         const distance = Math.hypot(x - lastX, y - lastY);
         if (distance < 1.5) return;
-
         currentRef.current = `${currentRef.current} L ${x.toFixed(1)} ${y.toFixed(1)}`;
         setCurrent(currentRef.current);
-
-        totalLengthRef.current += distance;
-        const target = Math.max(380, sizeRef.current.width * 2.2);
-        const nextProgress = Math.min(100, (totalLengthRef.current / target) * 100);
-        progressRef.current = nextProgress;
-        setProgress(nextProgress);
-        if (nextProgress >= 100) completeRef.current();
       },
       onPanResponderRelease: finishStroke,
       onPanResponderTerminate: finishStroke,
     });
-  }, []);
+  }, [tryHit]);
 
   const goLetter = (delta) => {
     const next = getLetterById((letterId + delta + LETTERS.length) % LETTERS.length);
@@ -151,13 +230,28 @@ export default function TracingGame() {
     reset();
   };
 
-  const canvasHeight = Math.max(220, Math.min(360, height * 0.36));
+  const canvasHeight = Math.max(240, Math.min(360, height * 0.36));
+
+  const undo = () => {
+    if (!pathsRef.current.length) return;
+    const removed = pathsRef.current[pathsRef.current.length - 1];
+    pathsRef.current = pathsRef.current.slice(0, -1);
+    setPaths(pathsRef.current);
+    const nextHit = removed?.hitIndex ?? 0;
+    hitIndexRef.current = nextHit;
+    setHitIndex(nextHit);
+    updateProgress(nextHit);
+    doneRef.current = false;
+    setDone(false);
+  };
+
+  const nextWaypointIndex = Math.min(hitIndex, totalWaypoints - 1);
 
   return (
     <Page>
       <ScreenHeader
         title={mode === "shape" ? "لوّن الأشكال" : "لوّن الحروف"}
-        subtitle="ارسم بإصبعك فوق الشكل الباهت"
+        subtitle="املأ نقاط الحرف نفسه بالترتيب من اليمين"
         onBack={() => navigate(mode === "shape" ? "games" : "letters")}
       />
 
@@ -200,12 +294,13 @@ export default function TracingGame() {
           }}
           {...panResponder.panHandlers}
         >
+          {/* الحرف الحقيقي الباهت خلف نقاط الإرشاد */}
           {mode === "letter" ? (
             <AppText
               pointerEvents="none"
               style={[
                 styles.guideLetter,
-                { fontSize: Math.min(size.height * 0.78, size.width * 0.92), lineHeight: size.height },
+                { fontSize: Math.min(size.height * 0.74, size.width * 0.9), lineHeight: size.height },
               ]}
             >
               {letter.letter}
@@ -214,19 +309,38 @@ export default function TracingGame() {
             <View pointerEvents="none" style={styles.guideShape}>
               <ShapeIcon
                 shapeId={shapeId}
-                stroke="#D9D1EC"
-                strokeWidth={4}
+                stroke="#DAD2EE"
+                strokeWidth={5}
                 dashed
                 size={Math.min(size.width, size.height) * 0.82}
               />
             </View>
           )}
 
+          {/* نقاط الإرشاد: تتبع نفس خط الحرف بالترتيب العربي الصحيح */}
           <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
-            {paths.map((path, index) => (
+            {(guide?.strokes || []).map((stroke, strokeIndex) =>
+              stroke.length > 1 ? (
+                <Polyline
+                  key={`guide-${strokeIndex}`}
+                  points={stroke.map((p) => `${toPx(p).x.toFixed(1)},${toPx(p).y.toFixed(1)}`).join(" ")}
+                  stroke="#B9AEE0"
+                  strokeWidth={5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray="0.1 15"
+                  fill="none"
+                />
+              ) : null
+            )}
+          </Svg>
+
+          {/* خطوط الأطفال */}
+          <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
+            {paths.map((item, index) => (
               <Path
                 key={`path-${index}`}
-                d={path}
+                d={item.d}
                 stroke={color}
                 strokeWidth={brush}
                 strokeLinecap="round"
@@ -246,6 +360,25 @@ export default function TracingGame() {
             )}
           </Svg>
 
+          {/* أجسام النقاط فوق كل شيء؛ النضرة البعدية المستهدفة أكبر */}
+          <Svg pointerEvents="none" width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
+            {waypoints.map((point) => {
+              const isUpcoming = point.index === nextWaypointIndex && !doneRef.current;
+              const isHit = point.index < hitIndex;
+              return (
+                <Circle
+                  key={`wp-${point.index}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r={isUpcoming ? 13 : 7.5}
+                  fill={isHit ? "#2FA37B" : isUpcoming ? "#FFF4CE" : "rgba(255,255,255,0.9)"}
+                  stroke={isHit ? "#1F7A56" : isUpcoming ? "#D99000" : "#B9AEE0"}
+                  strokeWidth={isUpcoming ? 3.5 : 2.5}
+                />
+              );
+            })}
+          </Svg>
+
           {done && (
             <View pointerEvents="none" style={styles.doneBadge}>
               <AppText style={styles.doneBadgeText}>✅ تم</AppText>
@@ -254,8 +387,12 @@ export default function TracingGame() {
         </View>
 
         <View style={styles.progressRow}>
-          <AppText style={styles.progressText}>اكتمال الرسم</AppText>
-          <AppText style={styles.progressText}>{Math.round(progress)}%</AppText>
+          <AppText style={styles.progressText}>
+            {done ? "الحرف مكتمل بشكله الصحيح" : "أتبع النقاط الملونة بالترتيب ←"}
+          </AppText>
+          <AppText style={styles.progressText}>
+            {hitIndex}/{totalWaypoints || 0}
+          </AppText>
         </View>
         <ProgressBar value={progress} color={color} height={10} />
       </Card>
@@ -303,23 +440,7 @@ export default function TracingGame() {
         </View>
 
         <View style={styles.actions}>
-          <GhostButton
-            label="تراجع"
-            emoji="↩️"
-            style={styles.flexButton}
-            onPress={() => {
-              if (!pathsRef.current.length) return;
-              pathsRef.current = pathsRef.current.slice(0, -1);
-              setPaths(pathsRef.current);
-              const next = Math.max(0, progress - 18);
-              const target = Math.max(380, sizeRef.current.width * 2.2);
-              totalLengthRef.current = (next / 100) * target;
-              progressRef.current = next;
-              setProgress(next);
-              doneRef.current = false;
-              setDone(false);
-            }}
-          />
+          <GhostButton label="تراجع" emoji="↩️" style={styles.flexButton} onPress={undo} />
           <GhostButton
             label="مسح الكل"
             emoji="🧹"
@@ -372,7 +493,7 @@ export default function TracingGame() {
 }
 
 const styles = StyleSheet.create({
-  modeRow: { flexDirection: "row-reverse", gap: 8, marginTop: 6 },
+  modeRow: { flexDirection: ROW, gap: 8, marginTop: 6 },
   modeChip: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,0.8)",
@@ -386,7 +507,7 @@ const styles = StyleSheet.create({
   modeText: { fontSize: 13, fontWeight: "800", color: PALETTE.inkSoft },
   modeTextActive: { color: PALETTE.primaryDark },
   stageCard: { marginTop: 12 },
-  stageHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  stageHeader: { flexDirection: ROW, alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   stageTitle: { fontSize: 17, fontWeight: "900", color: PALETTE.ink },
   miniSpeaker: {
     width: 38,
@@ -410,7 +531,7 @@ const styles = StyleSheet.create({
   },
   guideLetter: {
     position: "absolute",
-    color: "#E3DCEE",
+    color: "#EFE9F5",
     fontWeight: "900",
     textAlign: "center",
     textAlignVertical: "center",
@@ -427,14 +548,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   doneBadgeText: { color: "#1F7A56", fontWeight: "900", fontSize: 14 },
-  progressRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 12, marginBottom: 6 },
+  progressRow: { flexDirection: ROW, justifyContent: "space-between", marginTop: 12, marginBottom: 6 },
   progressText: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
   toolsCard: { marginTop: 12 },
   toolsTitle: { fontSize: 13, fontWeight: "900", color: PALETTE.ink, textAlign: "right", marginTop: 6 },
-  colorsRow: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 9, marginTop: 8, justifyContent: "center" },
+  colorsRow: { flexDirection: ROW, flexWrap: "wrap", gap: 9, marginTop: 8, justifyContent: "center" },
   colorDot: { width: 38, height: 38, borderRadius: 14, borderWidth: 3, borderColor: "transparent" },
   colorDotActive: { borderColor: PALETTE.ink, transform: [{ scale: 1.06 }] },
-  brushRow: { flexDirection: "row-reverse", gap: 10, marginTop: 8 },
+  brushRow: { flexDirection: ROW, gap: 10, marginTop: 8 },
   brushButton: {
     width: 52,
     height: 44,
@@ -446,9 +567,9 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   brushButtonActive: { borderColor: PALETTE.primary, backgroundColor: "#EDE9FF" },
-  actions: { flexDirection: "row-reverse", gap: 10, marginTop: 4 },
+  actions: { flexDirection: ROW, gap: 10, marginTop: 4 },
   flexButton: { flex: 1 },
-  pager: { flexDirection: "row-reverse", gap: 10, marginTop: 12 },
+  pager: { flexDirection: ROW, gap: 10, marginTop: 12 },
   navButton: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,0.85)",
@@ -459,9 +580,9 @@ const styles = StyleSheet.create({
   },
   navText: { color: PALETTE.primaryDark, fontWeight: "800", fontSize: 12, textAlign: "center" },
   shapePicker: { marginTop: 12 },
-  shapeChips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 8, marginTop: 10, justifyContent: "center" },
+  shapeChips: { flexDirection: ROW, flexWrap: "wrap", gap: 8, marginTop: 10, justifyContent: "center" },
   shapeChip: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     gap: 5,
     paddingHorizontal: 10,

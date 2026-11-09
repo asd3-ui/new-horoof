@@ -3,9 +3,10 @@ import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { ACTIVITIES } from "../data/activities";
 import { PARENT_TIPS } from "../data/games";
+import { VOICES, setAudioPrefs } from "../audio";
 import { LETTERS } from "../data/letters";
 import { getLevelInfo, unlockedBadges } from "../data/rewards";
-import { PALETTE, SHADOW_SOFT, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW_SOFT, useResponsive  } from "../theme";
 import {
   AppText,
   Card,
@@ -172,6 +173,40 @@ export default function DashboardScreen() {
         />
       </Card>
 
+      {/* اختيار القارئ: صوتان مختلفان لتقليل أخطاء النطق الآلي */}
+      <SectionTitle emoji="🎙️">قارئ التطبيق</SectionTitle>
+      <Card style={styles.settingsCard}>
+        <AppText style={styles.voiceIntro}>اختر الصوت الأنسب لطفلك — اضغط للتجربة والاختيار:</AppText>
+        {VOICES.map((voice) => {
+          const isActive = profile.ttsVoice === voice.id;
+          return (
+            <Pressable
+              key={voice.id}
+              onPress={() => {
+                setAudioPrefs({ voiceId: voice.id });
+                updateProfile({ ttsVoice: voice.id });
+                speak(`هذا صوت ${voice.name}. ألف، باء، تاء.`);
+              }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isActive }}
+              accessibilityLabel={`القارئ ${voice.name}`}
+              style={({ pressed }) => [
+                styles.voiceOption,
+                isActive && styles.voiceOptionActive,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppText style={styles.voiceEmoji}>{voice.emoji}</AppText>
+              <View style={styles.toggleText}>
+                <AppText style={styles.voiceName}>{voice.name}</AppText>
+                <AppText style={styles.voiceSubtitle}>{voice.subtitle}</AppText>
+              </View>
+              <AppText style={styles.voiceCheck}>{isActive ? "✅ مُختار" : "🎧 تجربة"}</AppText>
+            </Pressable>
+          );
+        })}
+      </Card>
+
       <View style={styles.actions}>
         <GhostButton
           label="تعديل ملف الطفل"
@@ -213,27 +248,27 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  profileCard: { flexDirection: "row-reverse", alignItems: "center", gap: 12, marginTop: 8 },
+  profileCard: { flexDirection: ROW, alignItems: "center", gap: 12, marginTop: 8 },
   avatar: { width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   avatarEmoji: { fontSize: 32 },
   profileInfo: { flex: 1 },
   profileName: { fontSize: 19, fontWeight: "900", color: PALETTE.ink, textAlign: "right" },
   profileLevel: { fontSize: 12, fontWeight: "800", color: PALETTE.primary, textAlign: "right", marginTop: 2 },
   profileMeta: { fontSize: 10, color: PALETTE.inkSoft, textAlign: "right", marginTop: 4 },
-  summaryRow: { flexDirection: "row-reverse", gap: 8, marginTop: 12 },
+  summaryRow: { flexDirection: ROW, gap: 8, marginTop: 12 },
   summary: { flex: 1, borderRadius: 18, paddingVertical: 12, alignItems: "center" },
   summaryValue: { fontSize: 20, fontWeight: "900", color: PALETTE.ink },
   summaryLabel: { fontSize: 9, color: PALETTE.inkSoft, marginTop: 2, textAlign: "center" },
   activitiesCard: { backgroundColor: "rgba(255,255,255,0.92)", paddingVertical: 8 },
-  activityRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10, paddingVertical: 8 },
+  activityRow: { flexDirection: ROW, alignItems: "center", gap: 10, paddingVertical: 8 },
   activityEmoji: { fontSize: 24 },
   activityInfo: { flex: 1 },
-  activityTop: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 4 },
+  activityTop: { flexDirection: ROW, justifyContent: "space-between", marginBottom: 4 },
   activityName: { fontSize: 12, fontWeight: "900", color: PALETTE.ink, textAlign: "right", flex: 1 },
   activityCount: { fontSize: 9, color: PALETTE.inkMuted, fontWeight: "700" },
   activityBest: { fontSize: 9, color: PALETTE.mint, marginTop: 3, textAlign: "right", fontWeight: "800" },
   lettersCard: { backgroundColor: "rgba(255,255,255,0.92)" },
-  lettersGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 6 },
+  lettersGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 6 },
   letterCell: {
     aspectRatio: 1,
     borderRadius: 12,
@@ -247,7 +282,7 @@ const styles = StyleSheet.create({
   letterCellText: { fontSize: 18, fontWeight: "900", color: PALETTE.ink },
   lettersHint: { fontSize: 10, color: PALETTE.inkMuted, textAlign: "center", marginTop: 10, lineHeight: 16 },
   settingsCard: { backgroundColor: "rgba(255,255,255,0.92)", paddingVertical: 4 },
-  toggleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10, paddingVertical: 10 },
+  toggleRow: { flexDirection: ROW, alignItems: "center", gap: 10, paddingVertical: 10 },
   toggleEmoji: { fontSize: 22 },
   toggleText: { flex: 1 },
   toggleTitle: { fontSize: 13, fontWeight: "900", color: PALETTE.ink, textAlign: "right" },
@@ -263,10 +298,17 @@ const styles = StyleSheet.create({
   switchOn: { backgroundColor: PALETTE.mint },
   switchKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF" },
   switchKnobOn: { alignSelf: "flex-end" },
-  actions: { flexDirection: "row-reverse", gap: 10, marginTop: 6 },
+  actions: { flexDirection: ROW, gap: 10, marginTop: 6 },
   flexButton: { flex: 1 },
+  voiceIntro: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft, textAlign: "right", marginBottom: 6 },
+  voiceOption: { flexDirection: ROW, alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 16, borderWidth: 2, borderColor: "transparent" },
+  voiceOptionActive: { backgroundColor: "#F1ECFF", borderColor: PALETTE.primary },
+  voiceEmoji: { fontSize: 26 },
+  voiceName: { fontSize: 14, fontWeight: "900", color: PALETTE.ink, textAlign: "right" },
+  voiceSubtitle: { fontSize: 10, color: PALETTE.inkMuted, textAlign: "right", marginTop: 2 },
+  voiceCheck: { fontSize: 11, fontWeight: "900", color: PALETTE.primaryDark },
   tipsCard: { backgroundColor: "#FFF4CE", paddingVertical: 8 },
-  tipRow: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 8, paddingVertical: 5 },
+  tipRow: { flexDirection: ROW, alignItems: "flex-start", gap: 8, paddingVertical: 5 },
   tipNumber: {
     width: 20,
     height: 20,

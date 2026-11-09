@@ -5,7 +5,7 @@ import { LETTERS } from "../data/letters";
 import { getCharacterById } from "../data/games";
 import { FEATURED_IDS, dailyActivity, getActivity } from "../data/activities";
 import { BADGES, getLevelInfo } from "../data/rewards";
-import { PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive  } from "../theme";
 import {
   ActivityCard,
   AppText,
@@ -214,7 +214,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row-reverse", alignItems: "center", marginTop: 10, gap: 10 },
+  header: { flexDirection: ROW, alignItems: "center", marginTop: 10, gap: 10 },
   avatar: { width: 58, height: 58, borderRadius: 20, alignItems: "center", justifyContent: "center", ...SHADOW_SOFT },
   avatarEmoji: { fontSize: 32 },
   headerText: { flex: 1 },
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   scoreText: { fontSize: 14, fontWeight: "900", color: PALETTE.ink },
   pressed: { opacity: 0.75 },
   levelCard: { marginTop: 14, backgroundColor: "rgba(255,255,255,0.9)" },
-  levelTop: { flexDirection: "row-reverse", alignItems: "center", gap: 10, marginBottom: 10 },
+  levelTop: { flexDirection: ROW, alignItems: "center", gap: 10, marginBottom: 10 },
   levelEmoji: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   levelEmojiText: { fontSize: 26 },
   levelInfo: { flex: 1 },
@@ -239,9 +239,9 @@ const styles = StyleSheet.create({
   levelName: { fontSize: 17, fontWeight: "900", color: PALETTE.ink, textAlign: "right" },
   levelHint: { fontSize: 10, color: PALETTE.inkMuted, textAlign: "right", marginTop: 2 },
   levelPercent: { fontSize: 15, fontWeight: "900", color: PALETTE.primary },
-  statsRow: { flexDirection: "row-reverse", gap: 8, marginTop: 12 },
+  statsRow: { flexDirection: ROW, gap: 8, marginTop: 12 },
   dailyCard: { marginTop: 16 },
-  dailyTop: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
+  dailyTop: { flexDirection: ROW, justifyContent: "space-between", alignItems: "center" },
   dailyBadge: {
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 999,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   dailyEmoji: { fontSize: 40 },
   dailyTitle: { fontSize: 20, fontWeight: "900", color: PALETTE.ink, textAlign: "right", marginTop: 6 },
   dailyText: { fontSize: 12, color: PALETTE.inkSoft, textAlign: "right", marginTop: 4 },
-  activityGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 10 },
+  activityGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 10 },
   letterStrip: { gap: 8, paddingVertical: 4, paddingHorizontal: 2 },
   letterChip: {
     width: 50,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   letterChipLearned: { backgroundColor: "#FFF8DC", borderColor: "#F0D787" },
   letterChipText: { fontSize: 24, fontWeight: "900", color: PALETTE.ink },
   letterChipStar: { fontSize: 9, marginTop: 1 },
-  badgesRow: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 8 },
+  badgesRow: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 8 },
   badge: {
     width: "30%",
     backgroundColor: "#FFF8DC",
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 9, fontWeight: "800", color: PALETTE.inkSoft, textAlign: "center", marginTop: 4 },
   parentCard: {
     marginTop: 18,
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     gap: 10,
     backgroundColor: "#F1E8FF",

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { FORM_NAMES, LETTERS, getLetterById } from "../data/letters";
-import { LETTER_COLORS, PALETTE, SHADOW_SOFT, useResponsive } from "../theme";
+import { ROW, LETTER_COLORS, PALETTE, SHADOW_SOFT, useResponsive  } from "../theme";
 import {
   AppText,
   Card,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   letterName: { fontSize: 22, fontWeight: "900", color: PALETTE.ink, marginTop: 8 },
   tip: { fontSize: 12, color: PALETTE.inkSoft, textAlign: "center", marginTop: 6, lineHeight: 19 },
   sectionTitle: { fontSize: 18, fontWeight: "900", color: PALETTE.ink, textAlign: "center", marginTop: 20, marginBottom: 10 },
-  wordsRow: { flexDirection: "row-reverse", gap: 8 },
+  wordsRow: { flexDirection: ROW, gap: 8 },
   wordCard: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,0.92)",
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   wordText: { fontSize: 15, fontWeight: "900", color: PALETTE.ink, marginTop: 4, textAlign: "center" },
   wordHint: { fontSize: 8, color: PALETTE.inkMuted, marginTop: 2 },
   formsCard: { backgroundColor: "rgba(255,255,255,0.92)" },
-  formsGrid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 8 },
+  formsGrid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 8 },
   formCell: {
     backgroundColor: "#F8F5FF",
     borderRadius: 16,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   formChar: { fontSize: 38, fontWeight: "900", lineHeight: 46 },
   formLabel: { fontSize: 9, fontWeight: "800", color: PALETTE.inkSoft, textAlign: "center", marginTop: 2 },
   formsHint: { fontSize: 11, color: PALETTE.inkSoft, textAlign: "center", lineHeight: 17, marginTop: 12 },
-  pager: { flexDirection: "row-reverse", gap: 10, marginTop: 14 },
+  pager: { flexDirection: ROW, gap: 10, marginTop: 14 },
   navButton: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,0.9)",

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { LETTERS, LETTER_PACKS } from "../data/letters";
-import { PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive } from "../theme";
+import { ROW, PALETTE, SHADOW_SOFT, gridItemWidth, useResponsive  } from "../theme";
 import { AppText, Page, ProgressBar, ScreenHeader } from "../components/UI";
 
 export default function LettersScreen() {
@@ -88,12 +88,12 @@ export default function LettersScreen() {
 }
 
 const styles = StyleSheet.create({
-  progressRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
+  progressRow: { flexDirection: ROW, justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
   progressText: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
   packScroll: { marginTop: 14 },
   packRow: { gap: 8, paddingVertical: 2, paddingHorizontal: 2 },
   packChip: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   packText: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
   packTextActive: { color: PALETTE.primaryDark },
   packDescription: { fontSize: 11, color: PALETTE.inkMuted, textAlign: "center", marginTop: 8 },
-  grid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", gap: 9, marginTop: 12 },
+  grid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", gap: 9, marginTop: 12 },
   tile: {
     minHeight: 88,
     borderRadius: 20,

@@ -3,7 +3,7 @@ import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { useApp } from "../context";
 import { speakText, playSfx, buzz } from "../audio";
 import { LETTERS } from "../data/letters";
-import { PALETTE, gridItemWidth, useResponsive } from "../theme";
+import { ROW, PALETTE, gridItemWidth, useResponsive  } from "../theme";
 import { sample, shuffled } from "../utils";
 import {
   AppText,
@@ -227,9 +227,9 @@ export default function MemoryGame() {
 const styles = StyleSheet.create({
   movesPill: { backgroundColor: "#F1E8FF", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 7 },
   movesText: { fontSize: 13, fontWeight: "900", color: PALETTE.lilac },
-  progressRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
+  progressRow: { flexDirection: ROW, justifyContent: "space-between", marginTop: 6, marginBottom: 6 },
   progressText: { fontSize: 12, fontWeight: "800", color: PALETTE.inkSoft },
-  grid: { flexDirection: "row-reverse", flexWrap: "wrap", justifyContent: "center", marginTop: 16 },
+  grid: { flexDirection: ROW, flexWrap: "wrap", justifyContent: "center", marginTop: 16 },
   cardFace: {
     position: "absolute",
     top: 0,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   cardMatched: { backgroundColor: "#DFF7E8", borderColor: "#2FA37B" },
   cardLetter: { fontSize: 36, fontWeight: "900", color: PALETTE.ink },
   pressed: { opacity: 0.8 },
-  actions: { flexDirection: "row-reverse", gap: 10, marginTop: 10 },
+  actions: { flexDirection: ROW, gap: 10, marginTop: 10 },
   flexButton: { flex: 1 },
   doneCard: { alignItems: "center", marginTop: 18 },
   doneEmoji: { fontSize: 70 },

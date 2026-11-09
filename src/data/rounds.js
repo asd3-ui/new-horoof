@@ -10,9 +10,25 @@ import {
 } from "./games";
 import { pick, sample, shuffled, toArabicDigits, nextRoundKey } from "../utils";
 
+const NUMBER_WORDS = [
+  "",
+  "واحد",
+  "اثنان",
+  "ثلاثة",
+  "أربعة",
+  "خمسة",
+  "ستة",
+  "سبعة",
+  "ثمانية",
+  "تسعة",
+  "عشرة",
+];
+
 const letterChoice = (letter) => ({
   key: `l-${letter.id}`,
   label: letter.letter,
+  /** ننطق اسم الحرف وليس شكله فقط */
+  speech: letter.name,
   letterId: letter.id,
   letterName: letter.name,
 });
@@ -33,6 +49,8 @@ const numberChoices = (count) => {
   return shuffled([count, ...distractors]).map((value) => ({
     key: `n-${value}`,
     label: toArabicDigits(value),
+    /** ننطق الرقم كلمة كاملة بدل الرقم المهضوم بصريًا */
+    speech: NUMBER_WORDS[value] || toArabicDigits(value),
     value,
   }));
 };

@@ -5,16 +5,24 @@ import {
   StyleSheet,
   View,
   Pressable,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import * as Font from "expo-font";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { AppContext } from "./src/context";
-import { initAudio, releaseAudio, setAudioPrefs, speakText, stopSpeaking } from "./src/audio";
+import {
+  VOICES,
+  initAudio,
+  releaseAudio,
+  setAudioPrefs,
+  speakText,
+  stopSpeaking,
+} from "./src/audio";
 import { CHARACTERS, getCharacterById } from "./src/data/games";
 import { todayKey, daysBetween } from "./src/utils";
-import { PALETTE } from "./src/theme";
 
 import Background from "./src/components/Background";
 import Confetti from "./src/components/Confetti";
@@ -46,6 +54,23 @@ import {
   TrainGame,
   QuickQuizGame,
 } from "./src/screens/Games";
+import { PALETTE, ROW, setFontFamily } from "./src/theme";
+
+/** الخط العربي المرح (مصدر مفتوح OFL من Google Fonts) */
+const FONT_FAMILY = "BalooBhaijaan2";
+
+async function loadKidFonts() {
+  try {
+    await Font.loadAsync({
+      [FONT_FAMILY]: require("./assets/fonts/BalooBhaijaan2-Regular.ttf"),
+    });
+    setFontFamily(FONT_FAMILY);
+    return true;
+  } catch (error) {
+    // الخط الافتراضي يعمل في كل الأحوال.
+    return false;
+  }
+}
 
 const STORAGE_KEY = "haroofi-al-marah:profile:v2";
 const LEGACY_KEY = "haroofi-al-marah-profile";
@@ -65,6 +90,7 @@ const DEFAULT_PROFILE = {
   soundOn: true,
   hapticsOn: true,
   celebrationsOn: true,
+  ttsVoice: VOICES[0].id,
   createdAt: Date.now(),
 };
 
@@ -182,21 +208,34 @@ function normalizeProfile(raw) {
     soundOn: safe.soundOn !== false,
     hapticsOn: safe.hapticsOn !== false,
     celebrationsOn: safe.celebrationsOn !== false,
+    ttsVoice: VOICES.some((voice) => voice.id === safe.ttsVoice) ? safe.ttsVoice : VOICES[0].id,
     onboarded: Boolean(safe.onboarded),
   });
 }
 
 export default function App() {
+  const [fontReady, setFontReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    loadKidFonts().finally(() => {
+      if (mounted) setFontReady(true);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <SafeAreaProvider style={styles.provider}>
       <ErrorBoundary>
-        <AppShell />
+        <AppShell fontReady={fontReady} />
       </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
 
-function AppShell() {
+function AppShell({ fontReady: fontsAreReady }) {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [loaded, setLoaded] = useState(false);
@@ -279,8 +318,19 @@ function AppShell() {
     setAudioPrefs({
       sound: profile.soundOn !== false,
       haptics: profile.hapticsOn !== false,
+      voiceId: profile.ttsVoice || VOICES[0].id,
     });
-  }, [profile.hapticsOn, profile.soundOn]);
+  }, [profile.hapticsOn, profile.soundOn, profile.ttsVoice]);
+
+  // إيقاف كل النطق فور مغادرة التطبيق (الخلفية) — لا يبقى صوت يعمل خارج الصفحة.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") {
+        stopSpeaking();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(
     () => () => {
@@ -302,9 +352,26 @@ function AppShell() {
     setScreen(SCREENS[nextScreen] ? nextScreen : "home");
   }, []);
 
+  const exitAppCompletely = useCallback(() => {
+    stopSpeaking();
+    releaseAudio();
+    BackHandler.exitApp();
+  }, []);
+
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (screen === "home") return false;
+      if (screen === "home") {
+        // الخروج من الرئيسية: نغلق التطبيق نهائيًا بعد تأكيد كيّد الطفل/الوالد.
+        Alert.alert(
+          "إغلاق التطبيق",
+          "هل تريد إغلاق حروفي المرحة الآن؟",
+          [
+            { text: "إلغاء", style: "cancel" },
+            { text: "إغلاق", style: "destructive", onPress: exitAppCompletely },
+          ]
+        );
+        return true;
+      }
       if (screen === "onboarding") {
         if (profileRef.current.onboarded) {
           navigate("home");
@@ -328,7 +395,7 @@ function AppShell() {
       return true;
     });
     return () => subscription.remove();
-  }, [navigate, params?.mode, screen]);
+  }, [exitAppCompletely, navigate, params?.mode, screen]);
 
   /* ------------------------------- الإجراءات ------------------------------- */
   const updateProfile = useCallback((patch) => {
@@ -455,7 +522,7 @@ function AppShell() {
 
         <View style={styles.container}>
           <View style={styles.screenArea}>
-            {loaded ? (
+            {loaded && fontsAreReady ? (
               <ActiveScreen key={screenKey} />
             ) : (
               <View style={styles.loading}>
@@ -466,7 +533,7 @@ function AppShell() {
             )}
           </View>
 
-          {loaded && showNav && (
+          {loaded && fontsAreReady && showNav && (
             <BottomNav active={screen} onNavigate={navigate} bottomInset={insets.bottom} />
           )}
           <Toast toast={toast} />
@@ -488,7 +555,7 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: 24, fontWeight: "900", color: PALETTE.ink, marginTop: 10 },
   loadingHint: { fontSize: 12, color: PALETTE.inkSoft, marginTop: 6 },
   nav: {
-    flexDirection: "row-reverse",
+    flexDirection: ROW,
     backgroundColor: "rgba(255,255,255,0.97)",
     borderTopWidth: 1,
     borderTopColor: "#F0EAF8",
